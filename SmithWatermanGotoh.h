@@ -16,6 +16,13 @@ using namespace std;
 #define MOSAIK_NUM_NUCLEOTIDES 26
 #define GAP '-'
 
+struct AlignmentPos {
+  unsigned int ref_begin;
+  unsigned int ref_end;
+  unsigned int query_begin;
+  unsigned int query_end;
+};
+
 class CSmithWatermanGotoh {
 public:
 	// constructor
@@ -23,7 +30,7 @@ public:
 	// destructor
 	~CSmithWatermanGotoh(void);
 	// aligns the query sequence to the reference using the Smith Waterman Gotoh algorithm
-	void Align(unsigned int& referenceAl, string& cigarAl, const char* s1, const unsigned int s1Length, const char* s2, const unsigned int& s2Length);
+	void Align(AlignmentPos* alignmentPos, string& cigarAl, const char* s1, const unsigned int s1Length, const char* s2, const unsigned int& s2Length);
 	// enables homo-polymer scoring
 	void EnableHomoPolymerGapPenalty(float hpGapOpenPenalty);
 private:

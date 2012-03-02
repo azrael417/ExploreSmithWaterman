@@ -9,6 +9,10 @@
 
 using namespace std;
 
+void PrintAlignment(const string& name, const string& seq,
+                    const int& ) {
+}
+
 int main(int argc, char* argv[]) {
   Parameters param;
   ParseArgumentsOrDie(argc, argv, &param);
@@ -22,15 +26,15 @@ int main(int argc, char* argv[]) {
 
   string readname, sequence, qual, cigarSW;
   int length = 0;
-  unsigned int referenceSW;
+  AlignmentPos alignmentPos;
   CSmithWatermanGotoh sw(10.0f, -9.0f, 15.0f, 6.66f);
+  
   clock_t start = clock();
 
   while (fastq.LoadNextRead(&readname, &sequence, &qual)) {
     for (int i = 0; i < refs_count; ++i) {
       const char* pReference = refs.GetReferenceSequence(i, &length);
-      sw.Align(referenceSW, cigarSW, pReference, length, sequence.c_str(), sequence.size());
-
+      sw.Align(&alignmentPos, cigarSW, pReference, length, sequence.c_str(), sequence.size());
     }
   }
 
