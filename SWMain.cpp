@@ -9,9 +9,18 @@
 
 using namespace std;
 
-void PrintAlignment(const string& name, const string& seq,
-                    const string& cigar, const Alignment& pos) {
-  
+inline void PrintAlignment(const string& name, const string& seq,
+                    const string& cigar, const Alignment& al) {
+ cout << "read_name: " << name
+      << endl
+      << "read_seq: " << seq
+      << endl
+      << "max score: " << al.sw_score 
+      << ", begin_ref: " << al.ref_begin << ", begin_read: " << al.query_begin
+      << ", end_ref: " << al.ref_end << ", query_end: " << al.query_end
+      << endl
+      << "cigar: " << cigar
+      << endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -36,6 +45,7 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < refs_count; ++i) {
       const char* pReference = refs.GetReferenceSequence(i, &length);
       sw.Align(&alignment, cigarSW, pReference, length, sequence.c_str(), sequence.size());
+      PrintAlignment(readname, sequence, cigarSW, alignment);
     }
   }
 
