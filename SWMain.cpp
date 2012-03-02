@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string.h>
+#include <time.h>
 #include "SmithWatermanGotoh.h"
 #include "BandedSmithWaterman.h"
 #include "parameter_parser.h"
@@ -20,15 +21,22 @@ int main(int argc, char* argv[]) {
   fastq.Open(param.fastq.c_str());
 
   string readname, sequence, qual, cigarSW;
-  int length;
+  int length = 0;
   unsigned int referenceSW;
   CSmithWatermanGotoh sw(10.0f, -9.0f, 15.0f, 6.66f);
+  clock_t start = clock();
+
   while (fastq.LoadNextRead(&readname, &sequence, &qual)) {
     for (int i = 0; i < refs_count; ++i) {
       const char* pReference = refs.GetReferenceSequence(i, &length);
       sw.Align(referenceSW, cigarSW, pReference, length, sequence.c_str(), sequence.size());
+
     }
   }
+
+  clock_t end = clock();
+  float cpu_time = (static_cast<float>(end - start)) / static_cast<float>(CLOCKS_PER_SEC);
+  fprintf(stdout, "CPU time: %f seconds\n", cpu_time);
 
 	//=====================================================
 	// defind the hash region
