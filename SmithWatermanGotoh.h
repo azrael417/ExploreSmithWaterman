@@ -1,12 +1,13 @@
-#pragma once
+#ifndef SMITHWATERMANGOTOH_H_
+#define SMITHWATERMANGOTOH_H_
 
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 #include <iostream>
 #include <algorithm>
 #include <memory>
-//#include "Alignment.h"
 #include "Mosaik.h"
-#include <stdio.h>
-#include <string.h>
 #include <sstream>
 #include <string>
 
@@ -22,7 +23,7 @@ public:
 	// destructor
 	~CSmithWatermanGotoh(void);
 	// aligns the query sequence to the reference using the Smith Waterman Gotoh algorithm
-	void Align(unsigned int& referenceAl, string& cigarAl, const char* s1, const unsigned int s1Length, const char* s2, const unsigned int s2Length);
+	void Align(unsigned int& referenceAl, string& cigarAl, const char* s1, const unsigned int s1Length, const char* s2, const unsigned int& s2Length);
 	// enables homo-polymer scoring
 	void EnableHomoPolymerGapPenalty(float hpGapOpenPenalty);
 private:
@@ -35,7 +36,7 @@ private:
 	// our simple scoring matrix
 	float mScoringMatrix[MOSAIK_NUM_NUCLEOTIDES][MOSAIK_NUM_NUCLEOTIDES];
 	// keep track of maximum initialized sizes
-	unsigned int mCurrentMatrixSize;
+	uint64_t mCurrentMatrixSize;
 	unsigned int mCurrentAnchorSize;
 	unsigned int mCurrentQuerySize;
 	unsigned int mCurrentAQSumSize;
@@ -80,3 +81,5 @@ inline float CSmithWatermanGotoh::MaxFloats(const float& a, const float& b, cons
 	if(c > max) max = c;
 	return max;
 }
+
+#endif // SMITHWATERMANGOTOH_H_

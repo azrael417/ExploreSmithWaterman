@@ -6,8 +6,8 @@
 #include <iostream>
 #include <string>
 
-
 using std::cout;
+using std::cerr;
 using std::endl;
 using std::string;
 
@@ -30,7 +30,7 @@ void ParseArgumentsOrDie(const int argc,
     param->command_line += argv[i];
   }
 
-  const char *short_option = "hi:";
+  const char *short_option = "hf:q:";
 
   const struct option long_option[] = {
     { "help", no_argument, NULL, 'h' },
@@ -82,12 +82,12 @@ bool CheckParameters(const Parameters& param) {
 	bool errorFound = false;
 	// necessary parameters
 	if (param.fasta.empty()) {
-		cout << "ERROR: Please specific a FASTA file, -f." << endl;
+		cerr << "ERROR: Please specific a FASTA file, -f." << endl;
 		errorFound = true;
 	}
 
 	if (param.fastq.empty()) {
-		cout << "ERROR: Please specific a FASTQ file, -q." << endl;
+		cerr << "ERROR: Please specific a FASTQ file, -q." << endl;
 		errorFound = true;
 	}
 

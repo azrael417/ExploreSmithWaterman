@@ -1,5 +1,7 @@
 #include "SmithWatermanGotoh.h"
 
+#include <stdint.h>
+
 const float CSmithWatermanGotoh::FLOAT_NEGATIVE_INFINITY = (float)-1e+30;
 
 const char CSmithWatermanGotoh::Directions_STOP     = 0;
@@ -39,7 +41,7 @@ CSmithWatermanGotoh::~CSmithWatermanGotoh(void) {
 }
 
 // aligns the query sequence to the reference using the Smith Waterman Gotoh algorithm
-void CSmithWatermanGotoh::Align(unsigned int& referenceAl, string& cigarAl, const char* s1, const unsigned int s1Length, const char* s2, const unsigned int s2Length) {
+void CSmithWatermanGotoh::Align(unsigned int& referenceAl, string& cigarAl, const char* s1, const unsigned int s1Length, const char* s2, const unsigned int& s2Length) {
 
 	if((s1Length == 0) || (s2Length == 0)) {
 		cout << "ERROR: Found a read with a zero length." << endl;
@@ -49,13 +51,12 @@ void CSmithWatermanGotoh::Align(unsigned int& referenceAl, string& cigarAl, cons
 	unsigned int referenceLen      = s1Length + 1;
 	unsigned int queryLen          = s2Length + 1;
 	unsigned int sequenceSumLength = s1Length + s2Length;
-
 	// reinitialize our matrices
-
-	if((referenceLen * queryLen) > mCurrentMatrixSize) {
+	uint64_t matrix_size = static_cast<uint64_t>(referenceLen) * static_cast<uint64_t>(queryLen);
+	if(matrix_size > mCurrentMatrixSize) {
 
 		// calculate the new matrix size
-		mCurrentMatrixSize = referenceLen * queryLen;
+		mCurrentMatrixSize = matrix_size;
 
 		// delete the old arrays
 		if(mPointers)              delete [] mPointers;
@@ -63,7 +64,6 @@ void CSmithWatermanGotoh::Align(unsigned int& referenceAl, string& cigarAl, cons
 		if(mSizesOfHorizontalGaps) delete [] mSizesOfHorizontalGaps;
 
 		try {
-
 			// initialize the arrays
 			mPointers              = new char[mCurrentMatrixSize];
 			mSizesOfVerticalGaps   = new short[mCurrentMatrixSize];
@@ -77,7 +77,9 @@ void CSmithWatermanGotoh::Align(unsigned int& referenceAl, string& cigarAl, cons
 
 	// initialize the traceback matrix to STOP
 	memset((char*)mPointers, 0, SIZEOF_CHAR * queryLen);
-	for(unsigned int i = 1; i < referenceLen; i++) mPointers[i * queryLen] = 0;
+	for(unsigned int i = 1; i < referenceLen; ++i) {
+	  mPointers[i * queryLen] = 0;
+	}
 
 	// initialize the gap matrices to 1
 	uninitialized_fill(mSizesOfVerticalGaps, mSizesOfVerticalGaps + mCurrentMatrixSize, 1);

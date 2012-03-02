@@ -58,3 +58,4 @@ bool References::GetSequence(
   *seq = sequences_[chr_id].substr(pos, len);
   return true;
 }
+

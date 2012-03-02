@@ -18,11 +18,8 @@ OBJECTS= $(SOURCES:.cpp=.o)
 # ----------------
 # compiler options
 # ----------------
-
-CFLAGS=-Wall -O3
-LDFLAGS=-Wl,-s
-#CFLAGS=-g
-PROGRAM=BandedSmithWaterman
+export CXXFLAGS = -Wall -O3
+PROGRAM=SmithWaterman
 LIBS=
 
 all: $(PROGRAM)
@@ -31,7 +28,7 @@ all: $(PROGRAM)
 
 $(PROGRAM): $(OBJECTS)
 	@echo "  * linking $(PROGRAM)"
-	@$(CXX) $(LDFLAGS) $(FLAGS) -o $@ $^ $(LIBS)
+	@$(CXX) $(CXXFLAGS) -o $@ $^
 
 .PHONY: clean
 
