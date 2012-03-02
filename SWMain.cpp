@@ -10,7 +10,8 @@
 using namespace std;
 
 void PrintAlignment(const string& name, const string& seq,
-                    const int& ) {
+                    const string& cigar, const Alignment& pos) {
+  
 }
 
 int main(int argc, char* argv[]) {
@@ -26,7 +27,7 @@ int main(int argc, char* argv[]) {
 
   string readname, sequence, qual, cigarSW;
   int length = 0;
-  AlignmentPos alignmentPos;
+  Alignment alignment;
   CSmithWatermanGotoh sw(10.0f, -9.0f, 15.0f, 6.66f);
   
   clock_t start = clock();
@@ -34,7 +35,7 @@ int main(int argc, char* argv[]) {
   while (fastq.LoadNextRead(&readname, &sequence, &qual)) {
     for (int i = 0; i < refs_count; ++i) {
       const char* pReference = refs.GetReferenceSequence(i, &length);
-      sw.Align(&alignmentPos, cigarSW, pReference, length, sequence.c_str(), sequence.size());
+      sw.Align(&alignment, cigarSW, pReference, length, sequence.c_str(), sequence.size());
     }
   }
 

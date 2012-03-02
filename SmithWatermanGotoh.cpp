@@ -41,7 +41,7 @@ CSmithWatermanGotoh::~CSmithWatermanGotoh(void) {
 }
 
 // aligns the query sequence to the reference using the Smith Waterman Gotoh algorithm
-void CSmithWatermanGotoh::Align(AlignmentPos* alignmentPos, string& cigarAl, const char* s1, const unsigned int s1Length, const char* s2, const unsigned int& s2Length) {
+void CSmithWatermanGotoh::Align(Alignment* alignment, string& cigarAl, const char* s1, const unsigned int s1Length, const char* s2, const unsigned int& s2Length) {
 
 	if((s1Length == 0) || (s2Length == 0)) {
 		cout << "ERROR: Found a read with a zero length." << endl;
@@ -211,6 +211,7 @@ void CSmithWatermanGotoh::Align(AlignmentPos* alignmentPos, string& cigarAl, con
 	// traceback
 	//
 
+	alignment->sw_score = BestScore;
 	// aligned sequences
 	int gappedAnchorLen  = 0;   // length of sequence #1 after alignment
 	int gappedQueryLen   = 0;   // length of sequence #2 after alignment
@@ -285,10 +286,10 @@ void CSmithWatermanGotoh::Align(AlignmentPos* alignmentPos, string& cigarAl, con
 	// set the reference endpoints
 	//alignment.ReferenceBegin = ci;
 	//alignment.ReferenceEnd   = BestRow - 1;
-	alignmentPos->ref_begin   = ci;
-	alignmentPos->ref_end     = BestRow - 1;
-	alignmentPos->query_begin = cj;
-	alignmentPos->query_end   = BestColumn - 1;
+	alignment->ref_begin   = ci;
+	alignment->ref_end     = BestRow - 1;
+	alignment->query_begin = cj;
+	alignment->query_end   = BestColumn - 1;
 
 	// set the query endpoints
 	/*  
