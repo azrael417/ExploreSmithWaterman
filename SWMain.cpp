@@ -1,44 +1,19 @@
 #include <iostream>
 #include <string.h>
-//#include "Alignment.h"
-//#include "Benchmark.h"
-//#include "HashRegion.h"
 #include "SmithWatermanGotoh.h"
 #include "BandedSmithWaterman.h"
+#include "parameter_parser.h"
+#include "references.h"
 
 using namespace std;
 
 int main(int argc, char* argv[]) {
-/*
-	printf("------------------------------------------------------------------------------\n");
-	printf("Banded Smith-Waterman Algorithm (worst case)\n");
-	printf("Michael Stromberg & Wan-Ping Lee  Marth Lab, Boston College Biology Department\n");
-	printf("------------------------------------------------------------------------------\n\n");
-*/
-	// this version simulates the worst case of only a fragment hashing to the
-	// reference sequence. Basically a non-centered diagonal in the Smith-Waterman
-	// dynamic programming matrix.
+  Parameters param;
+  ParseArgumentsOrDie(argc, argv, &param);
 
-	// here we simulate a region on the reference that occurs between position 4001
-	// and position 4136. During hashing, only the first 20 bases in the query 
-	// matched perfectly.
+  References refs;
+  refs.LoadReferences(param.fasta.c_str());
 
-	// define the start and end coordinates of the entire reference region
-	//const unsigned int start = 4001;
-	//const unsigned int end   = 4136;
-
-	//const unsigned int testStart = atoi(argv[1]);
-	//const unsigned int testEnd = atoi(argv[2]);
-	//const unsigned int testQueryStart = atoi(argv[3]);
-	//const unsigned int testQueryEnd = atoi(argv[4]);
-	
-	//cout << endl<< "=====================================================" << endl;
-	//cout << testStart << "\t" << testQueryStart << endl;
-	
-	// define the 20 b:q
-	// ases that matched perfectly
-	//HashRegion hr;
-	
 	//=====================================================
 	// defind the hash region
 	// first.first:   reference begin

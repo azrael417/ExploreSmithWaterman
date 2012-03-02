@@ -6,7 +6,13 @@
 # ----------------------------------
 # define our source and object files
 # ----------------------------------
-SOURCES= SWMain.cpp BandedSmithWaterman.cpp SmithWatermanGotoh.cpp
+SOURCES= SWMain.cpp \
+		BandedSmithWaterman.cpp \
+		SmithWatermanGotoh.cpp \
+		fasta_reader.cpp \
+		fastq_reader.cpp \
+		references.cpp \
+		parameter_parser.cpp
 OBJECTS= $(SOURCES:.cpp=.o)
 
 # ----------------
