@@ -25,6 +25,8 @@ void References::LoadReferences(const char* filename) {
     names_.resize(chr_id + 1);
     sequences_.resize(chr_id + 1);
   }
+  names_.erase(names_.begin() + chr_id);
+  sequences_.erase(sequences_.begin() + chr_id);
   reader.Close();
 }
 

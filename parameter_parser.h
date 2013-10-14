@@ -12,6 +12,10 @@ struct Parameters {
   string fastq;    // -q  --fastq
 
   // operation parameters
+  float match;
+  float mismatch;
+  float open_gap;
+  float extend_gap;
 	
   // command line
   string command_line;
@@ -20,6 +24,10 @@ struct Parameters {
   Parameters()
       : fasta()
       , fastq()
+      , match(10.0)
+      , mismatch(-9.0)
+      , open_gap(15.0)
+      , extend_gap(6.66)
   {}
 };
 

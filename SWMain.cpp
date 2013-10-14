@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
   string readname, sequence, qual, cigarSW;
   int length = 0;
   Alignment alignment;
-  CSmithWatermanGotoh sw(10.0f, -9.0f, 15.0f, 6.66f);
+  CSmithWatermanGotoh sw(param.match, 0-param.mismatch, param.open_gap, param.extend_gap);
   
   clock_t start = clock();
 

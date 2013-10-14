@@ -66,15 +66,14 @@ bool FastqReader::LoadNextRead(
   TrimString(' ', readname);
 
   string temp;
-  bool loading_seq  = true;
-  bool loading_qual = false;
+  int fastq_step = 2;
   while(!file_.eof()) {
     temp.clear();
     getline(file_, temp);
     ++line_;
     
     if (!temp.empty()) { // get a line in temp
-      if (temp[0] == '@') { // get the next read
+      if (fastq_step == 1) { // get the next read
         if (temp.size() == 1) {
 	  cerr << "ERROR: A readname is not seen after '@'. Line: " << line_ << endl;
 	  error_ = true;
@@ -82,14 +81,21 @@ bool FastqReader::LoadNextRead(
 	}
         readname_.clear();
 	readname_ = temp.substr(1, temp.size() - 1);
-	break;
-      } else if (temp[0] == '+') {
-        loading_seq = false;
-	loading_qual = true;
+	fastq_step = 2;
+	break; // loading the current read done
+      } else if (fastq_step == 2) {
+        *sequence += temp;
+	fastq_step = 3;
+      } else if (fastq_step == 3) {
+	fastq_step = 4;
 	continue;
+      } else if (fastq_step == 4){
+	*qual += temp;
+	fastq_step = 1;
       } else {
-        if (loading_seq) *sequence += temp;
-	if (loading_qual) *qual += temp;
+        cerr << "ERROR: Unknown fastq step. Line: " << line_ << endl;
+	error_ = true;
+	break;
       }
     } // end if-else
   } // end while

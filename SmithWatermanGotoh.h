@@ -17,10 +17,10 @@ using namespace std;
 #define GAP '-'
 
 struct Alignment {
-  unsigned int ref_begin;
-  unsigned int ref_end;
-  unsigned int query_begin;
-  unsigned int query_end;
+  uint64_t ref_begin;
+  uint64_t ref_end;
+  uint64_t query_begin;
+  uint64_t query_end;
   float sw_score;
 };
 
@@ -45,9 +45,9 @@ private:
 	float mScoringMatrix[MOSAIK_NUM_NUCLEOTIDES][MOSAIK_NUM_NUCLEOTIDES];
 	// keep track of maximum initialized sizes
 	uint64_t mCurrentMatrixSize;
-	unsigned int mCurrentAnchorSize;
-	unsigned int mCurrentQuerySize;
-	unsigned int mCurrentAQSumSize;
+	uint64_t mCurrentAnchorSize;
+	uint64_t mCurrentQuerySize;
+	uint64_t mCurrentAQSumSize;
 	// define our traceback directions
 	// N.B. This used to be defined as an enum, but gcc doesn't like being told
 	// which storage class to use

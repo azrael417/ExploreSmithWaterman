@@ -48,11 +48,11 @@ void CSmithWatermanGotoh::Align(Alignment* alignment, string& cigarAl, const cha
 		exit(1);
 	}
 
-	unsigned int referenceLen      = s1Length + 1;
-	unsigned int queryLen          = s2Length + 1;
-	unsigned int sequenceSumLength = s1Length + s2Length;
+	uint64_t referenceLen      = s1Length + 1;
+	uint64_t queryLen          = s2Length + 1;
+	uint64_t sequenceSumLength = s1Length + s2Length;
 	// reinitialize our matrices
-	uint64_t matrix_size = static_cast<uint64_t>(referenceLen) * static_cast<uint64_t>(queryLen);
+	uint64_t matrix_size = referenceLen * queryLen;
 	if(matrix_size > mCurrentMatrixSize) {
 
 		// calculate the new matrix size
@@ -77,7 +77,7 @@ void CSmithWatermanGotoh::Align(Alignment* alignment, string& cigarAl, const cha
 
 	// initialize the traceback matrix to STOP
 	memset((char*)mPointers, 0, SIZEOF_CHAR * queryLen);
-	for(unsigned int i = 1; i < referenceLen; ++i) {
+	for(uint64_t i = 1; i < referenceLen; ++i) {
 	  mPointers[i * queryLen] = 0;
 	}
 
@@ -141,16 +141,16 @@ void CSmithWatermanGotoh::Align(Alignment* alignment, string& cigarAl, const cha
 	float queryGapExtendScore, queryGapOpenScore;
 	float referenceGapExtendScore, referenceGapOpenScore, currentAnchorGapScore;
 
-	unsigned int BestColumn = 0;
-	unsigned int BestRow    = 0;
+	uint64_t BestColumn = 0;
+	uint64_t BestRow    = 0;
 	float BestScore         = FLOAT_NEGATIVE_INFINITY;
 
-	for(unsigned int i = 1, k = queryLen; i < referenceLen; i++, k += queryLen) {
+	for(uint64_t i = 1, k = queryLen; i < referenceLen; i++, k += queryLen) {
 
 		currentAnchorGapScore = FLOAT_NEGATIVE_INFINITY;
 		bestScoreDiagonal = mBestScores[0];
 
-		for(unsigned int j = 1, l = k + 1; j < queryLen; j++, l++) {
+		for(uint64_t j = 1, l = k + 1; j < queryLen; j++, l++) {
 
 			// calculate our similarity score
 			similarityScore = mScoringMatrix[s1[i - 1] - 'A'][s2[j - 1] - 'A'];
@@ -219,9 +219,9 @@ void CSmithWatermanGotoh::Align(Alignment* alignment, string& cigarAl, const cha
 
 	char c1, c2;
 
-	int ci = BestRow;
-	int cj = BestColumn;
-	int ck = ci * queryLen;
+	uint64_t ci = BestRow;
+	uint64_t cj = BestColumn;
+	uint64_t ck = ci * queryLen;
 
 	// traceback flag
 	bool keepProcessing = true;
@@ -248,7 +248,7 @@ void CSmithWatermanGotoh::Align(Alignment* alignment, string& cigarAl, const cha
 				break;
 
 			case Directions_UP:
-				for(unsigned int l = 0, len = mSizesOfVerticalGaps[ck + cj]; l < len; l++) {
+				for(uint64_t l = 0, len = mSizesOfVerticalGaps[ck + cj]; l < len; l++) {
 					mReversedAnchor[gappedAnchorLen++] = s1[--ci];
 					mReversedQuery[gappedQueryLen++]   = GAP;
 					ck -= queryLen;
@@ -257,7 +257,7 @@ void CSmithWatermanGotoh::Align(Alignment* alignment, string& cigarAl, const cha
 				break;
 
 			case Directions_LEFT:
-				for(unsigned int l = 0, len = mSizesOfHorizontalGaps[ck + cj]; l < len; l++) {
+				for(uint64_t l = 0, len = mSizesOfHorizontalGaps[ck + cj]; l < len; l++) {
 					mReversedAnchor[gappedAnchorLen++] = GAP;
 					mReversedQuery[gappedQueryLen++]   = s2[--cj];
 					numMismatches++;
@@ -279,6 +279,12 @@ void CSmithWatermanGotoh::Align(Alignment* alignment, string& cigarAl, const cha
 	// reverse the strings and assign them to our alignment structure
 	reverse(mReversedAnchor, mReversedAnchor + gappedAnchorLen);
 	reverse(mReversedQuery,  mReversedQuery  + gappedQueryLen);
+
+/*
+	cerr << mReversedAnchor << endl;
+	cerr << mReversedQuery << endl;
+	cerr << endl;
+*/
 
 	//alignment.Reference = mReversedAnchor;
 	//alignment.Query     = mReversedQuery;
@@ -308,8 +314,8 @@ void CSmithWatermanGotoh::Align(Alignment* alignment, string& cigarAl, const cha
 	//alignment.QueryLength = alignment.QueryEnd - alignment.QueryBegin + 1;
 	//alignment.NumMismatches  = numMismatches;
 
-	unsigned int alLength = strlen(mReversedAnchor);
-	unsigned int m = 0, d = 0, i = 0;
+	uint64_t alLength = strlen(mReversedAnchor);
+	uint64_t m = 0, d = 0, i = 0;
 	bool dashRegion = false;
 	ostringstream oCigar (ostringstream::out);
 	for ( unsigned int j = 0; j < alLength; j++ ) {
