@@ -58,7 +58,7 @@ bool FastqReader::LoadNextRead(
   }
 
   if (readname->empty()) {
-    cerr << "ERROR: The readname is empty." << endl;
+    cerr << "ERROR fastq: The readname is empty." << endl;
     error_ = true;
     return false;
   }

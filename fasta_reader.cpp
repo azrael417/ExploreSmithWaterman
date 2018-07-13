@@ -54,7 +54,7 @@ bool FastaReader::LoadNextRead(string* readname, string* sequence) {
   }
 
   if (readname->empty()) {
-    cerr << "ERROR: The readname is empty." << endl;
+    cerr << "ERROR fasta: The readname is empty." << endl;
     error_ = true;
     return false;
   }

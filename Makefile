@@ -18,6 +18,7 @@ OBJECTS= $(SOURCES:.cpp=.o)
 # ----------------
 # compiler options
 # ----------------
+CXX = CC
 export CXXFLAGS = -Wall -O3
 PROGRAM=SmithWaterman
 LIBS=
