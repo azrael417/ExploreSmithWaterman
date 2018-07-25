@@ -43,11 +43,11 @@ int main(int argc, char* argv[]) {
 
   string readname, *sequences, *quals, cigarSW;
   int length = 0, readsize, num_total_aligns;
-  Alignment alignment;
   clock_t start, end;
   unsigned int max_sequence_length=0, max_reference_length=0;
 
-  // determine max sequence length
+  // determine max sequence length and counts
+  int sequence_count=0;
   {
     FastqReader fastqtmp;
     string sequence, qual;
@@ -57,12 +57,15 @@ int main(int argc, char* argv[]) {
       if (sequence_length > max_sequence_length) {
 	      max_sequence_length = sequence_length;
       }
+      sequence_count++;
     }
   }
-  cout << "Max sequence length: " << max_sequence_length << "\n";
+  cout << "Number of sequences: " << sequence_count << endl;
+  cout << "Max sequence length: " << max_sequence_length << endl;
 
   // max reference length
   max_reference_length = refs.GetMaxSequenceLength();
+  cout << "Number of references: " << refs_count << endl;
   cout << "Max reference length: " << max_reference_length << "\n";
   
   //scope ensures proper deletion of sw object
@@ -70,17 +73,21 @@ int main(int argc, char* argv[]) {
     CSmithWatermanGotoh sw(param.match, 0-param.mismatch, param.open_gap, param.extend_gap, 
 			   max_reference_length, max_sequence_length);
 
+    //allocate alignment buffer
+    Kokkos::View<Alignment**> alignments=Kokkos::View<Alignment**>("alignments", refs_count, sequence_count);
+
     //start clock
     start = clock();
 
     //do batches
     num_total_aligns = 0;
     while (fastq.LoadNextBatch(&readname, &sequences, &quals, &readsize, param.batchsize)) {
+      
       for (int j = 0; j < param.batchsize; ++j){
         for (int i = 0; i < refs_count; ++i) {
           const char* pReference = refs.GetReferenceSequence(i, &length);
-          sw.Align(&alignment, cigarSW, pReference, length, sequences[j].c_str(), sequences[j].size());
-          PrintAlignment(readname, sequences[j], cigarSW, alignment);
+          sw.Align(alignments(i,j), cigarSW, pReference, length, sequences[j].c_str(), sequences[j].size());
+          PrintAlignment(readname, sequences[j], cigarSW, alignments(i,j));
           num_total_aligns++;
         }
       }
@@ -89,8 +96,8 @@ int main(int argc, char* argv[]) {
     for (int j = 0; j < readsize; ++j){
       for (int i = 0; i < refs_count; ++i) {
         const char* pReference = refs.GetReferenceSequence(i, &length);
-        sw.Align(&alignment, cigarSW, pReference, length, sequences[j].c_str(), sequences[j].size());
-        PrintAlignment(readname, sequences[j], cigarSW, alignment);
+        sw.Align(alignments(i,j), cigarSW, pReference, length, sequences[j].c_str(), sequences[j].size());
+        PrintAlignment(readname, sequences[j], cigarSW, alignments(i,j));
         num_total_aligns++;
       }
     }
