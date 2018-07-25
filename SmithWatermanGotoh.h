@@ -30,7 +30,8 @@ struct Alignment {
 class CSmithWatermanGotoh {
 public:
 	// constructor
-	CSmithWatermanGotoh(float matchScore, float mismatchScore, float gapOpenPenalty, float gapExtendPenalty);
+        CSmithWatermanGotoh(float matchScore, float mismatchScore, float gapOpenPenalty, float gapExtendPenalty, 
+		            unsigned int max_reference_length, unsigned int max_sequence_length);
 	// destructor
 	~CSmithWatermanGotoh(void);
 	// aligns the query sequence to the reference using the Smith Waterman Gotoh algorithm

@@ -45,11 +45,37 @@ int main(int argc, char* argv[]) {
   int length = 0;
   Alignment alignment;
   clock_t start, end;
+  unsigned int max_sequence_length, max_reference_length;
+
+  // determine max sequence length
+  {
+    FastqReader fastqtmp;
+    fastqtmp.Open(param.fastq.c_str());
+    while (fastqtmp.LoadNextRead(&readname, &sequence, &qual)) {
+      const unsigned int sequence_length = sequence.size();
+      if (sequence_length > max_sequence_length) {
+	max_sequence_length = sequence_length;
+      }
+    }
+  }
+  
+  cout << "max sequence length: " << max_sequence_length << "\n";
+
+  // max reference length
+  for (int i = 0; i < refs_count; ++i) {
+    const char* pReference = refs.GetReferenceSequence(i, &length);
+    if (length > max_reference_length) {
+      max_reference_length = length;
+    }
+  }
+
+  cout << "max reference length: " << max_reference_length << "\n";
   
   //scope ensures proper deletion of sw object
   {
-    CSmithWatermanGotoh sw(param.match, 0-param.mismatch, param.open_gap, param.extend_gap);
-  
+    CSmithWatermanGotoh sw(param.match, 0-param.mismatch, param.open_gap, param.extend_gap, 
+			   max_reference_length, max_sequence_length);
+
     //start clock
     start = clock();
 

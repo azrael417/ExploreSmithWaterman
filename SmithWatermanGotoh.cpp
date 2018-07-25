@@ -9,11 +9,12 @@ const char CSmithWatermanGotoh::Directions_LEFT     = 1;
 const char CSmithWatermanGotoh::Directions_DIAGONAL = 2;
 const char CSmithWatermanGotoh::Directions_UP       = 3;
 
-CSmithWatermanGotoh::CSmithWatermanGotoh(float matchScore, float mismatchScore, float gapOpenPenalty, float gapExtendPenalty) 
-: mCurrentMatrixSize(0)
+CSmithWatermanGotoh::CSmithWatermanGotoh(float matchScore, float mismatchScore, float gapOpenPenalty, float gapExtendPenalty,
+					 unsigned int max_reference_length, unsigned int max_sequence_length) 
+: mCurrentMatrixSize((max_reference_length + 1) * (max_sequence_length + 1))
 , mCurrentAnchorSize(0)
-, mCurrentQuerySize(0)
-, mCurrentAQSumSize(0)
+, mCurrentQuerySize(max_sequence_length + 1)
+, mCurrentAQSumSize(max_sequence_length + max_reference_length)
 , mMatchScore(matchScore)
 , mMismatchScore(mismatchScore)
 , mGapOpenPenalty(gapOpenPenalty)
@@ -28,6 +29,20 @@ CSmithWatermanGotoh::CSmithWatermanGotoh(float matchScore, float mismatchScore, 
 , mUseHomoPolymerGapOpenPenalty(false)
 {
 	CreateScoringMatrix();
+	
+	// allocate buffers
+	try {
+	  mPointers              = new char[mCurrentMatrixSize];
+	  mSizesOfVerticalGaps   = new short[mCurrentMatrixSize];
+	  mSizesOfHorizontalGaps = new short[mCurrentMatrixSize];
+	  mQueryGapScores        = new float[mCurrentQuerySize + 1];
+	  mBestScores            = new float[mCurrentQuerySize + 1];
+	  mReversedAnchor        = new char[mCurrentAQSumSize + 1];	// reversed sequence #1
+	  mReversedQuery         = new char[mCurrentAQSumSize + 1];	// reversed sequence #2
+	} catch(bad_alloc) {
+	  cout << "ERROR: Unable to allocate enough memory for the Smith-Waterman algorithm." << endl;
+	  exit(1);
+	}
 }
 
 CSmithWatermanGotoh::~CSmithWatermanGotoh(void) {
@@ -53,29 +68,9 @@ void CSmithWatermanGotoh::Align(Alignment* alignment, string& cigarAl, const cha
 	uint64_t referenceLen      = s1Length + 1;
 	uint64_t queryLen          = s2Length + 1;
 	uint64_t sequenceSumLength = s1Length + s2Length;
-	// reinitialize our matrices
+	// set current matrix size
 	uint64_t matrix_size = referenceLen * queryLen;
-	if(matrix_size > mCurrentMatrixSize) {
-
-		// calculate the new matrix size
-		mCurrentMatrixSize = matrix_size;
-
-		// delete the old arrays
-		if(mPointers)              delete [] mPointers;
-		if(mSizesOfVerticalGaps)   delete [] mSizesOfVerticalGaps;
-		if(mSizesOfHorizontalGaps) delete [] mSizesOfHorizontalGaps;
-
-		try {
-			// initialize the arrays
-			mPointers              = new char[mCurrentMatrixSize];
-			mSizesOfVerticalGaps   = new short[mCurrentMatrixSize];
-			mSizesOfHorizontalGaps = new short[mCurrentMatrixSize];
-
-		} catch(bad_alloc) {
-			cout << "ERROR: Unable to allocate enough memory for the Smith-Waterman algorithm." << endl;
-			exit(1);
-		}
-	}
+	mCurrentMatrixSize = matrix_size;
 
 	// initialize the traceback matrix to STOP
 	memset((char*)mPointers, 0, SIZEOF_CHAR * queryLen);
@@ -90,9 +85,9 @@ void CSmithWatermanGotoh::Align(Alignment* alignment, string& cigarAl, const cha
 	//
 	// construct
 	//
-
+	mCurrentQuerySize = s2Length;
 	// reinitialize our query-dependent arrays
-	if(s2Length > mCurrentQuerySize) {
+	/*	if(s2Length > mCurrentQuerySize) {
 
 		// calculate the new query array size
 		mCurrentQuerySize = s2Length;
@@ -112,7 +107,11 @@ void CSmithWatermanGotoh::Align(Alignment* alignment, string& cigarAl, const cha
 			exit(1);
 		}
 	}
+	*/
 
+	mCurrentAQSumSize = sequenceSumLength;
+
+	/*
 	// reinitialize our reference+query-dependent arrays
 	if(sequenceSumLength > mCurrentAQSumSize) {
 
@@ -134,6 +133,7 @@ void CSmithWatermanGotoh::Align(Alignment* alignment, string& cigarAl, const cha
 			exit(1);
 		}
 	}
+	*/
 
 	// initialize the gap score and score vectors
 	uninitialized_fill(mQueryGapScores, mQueryGapScores + queryLen, FLOAT_NEGATIVE_INFINITY);
