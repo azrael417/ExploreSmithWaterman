@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
   fastq.Open(param.fastq.c_str());
 
   string readname, *sequences, *quals, cigarSW;
-  int length = 0, readsize;
+  int length = 0, readsize, num_total_aligns;
   Alignment alignment;
   clock_t start, end;
   unsigned int max_sequence_length, max_reference_length;
@@ -50,25 +50,19 @@ int main(int argc, char* argv[]) {
   // determine max sequence length
   {
     FastqReader fastqtmp;
+    string sequence, qual;
     fastqtmp.Open(param.fastq.c_str());
     while (fastqtmp.LoadNextRead(&readname, &sequence, &qual)) {
       const unsigned int sequence_length = sequence.size();
       if (sequence_length > max_sequence_length) {
-	max_sequence_length = sequence_length;
+	      max_sequence_length = sequence_length;
       }
     }
   }
-  
   cout << "max sequence length: " << max_sequence_length << "\n";
 
   // max reference length
-  for (int i = 0; i < refs_count; ++i) {
-    const char* pReference = refs.GetReferenceSequence(i, &length);
-    if (length > max_reference_length) {
-      max_reference_length = length;
-    }
-  }
-
+  max_reference_length = refs.GetMaxSequenceLength();
   cout << "max reference length: " << max_reference_length << "\n";
   
   //scope ensures proper deletion of sw object
@@ -80,12 +74,14 @@ int main(int argc, char* argv[]) {
     start = clock();
 
     //do batches
+    num_total_aligns = 0;
     while (fastq.LoadNextBatch(&readname, &sequences, &quals, &readsize, param.batchsize)) {
       for (int j = 0; j < param.batchsize; ++j){
         for (int i = 0; i < refs_count; ++i) {
           const char* pReference = refs.GetReferenceSequence(i, &length);
           sw.Align(&alignment, cigarSW, pReference, length, sequences[j].c_str(), sequences[j].size());
           PrintAlignment(readname, sequences[j], cigarSW, alignment);
+          num_total_aligns++;
         }
       }
     }
@@ -95,6 +91,7 @@ int main(int argc, char* argv[]) {
         const char* pReference = refs.GetReferenceSequence(i, &length);
         sw.Align(&alignment, cigarSW, pReference, length, sequences[j].c_str(), sequences[j].size());
         PrintAlignment(readname, sequences[j], cigarSW, alignment);
+        num_total_aligns++;
       }
     }
     
@@ -104,6 +101,7 @@ int main(int argc, char* argv[]) {
   
   float cpu_time = (static_cast<float>(end - start)) / static_cast<float>(CLOCKS_PER_SEC);
   fprintf(stdout, "CPU time: %f seconds\n", cpu_time);
+  fprintf(stdout, "Number of total alignments: %i\n", num_total_aligns);
 
 	//=====================================================
 	// defind the hash region
