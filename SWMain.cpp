@@ -86,15 +86,15 @@ int main(int argc, char* argv[]) {
       //perform alignment
       for (int j = 0; j < param.batchsize; ++j){
         for (int i = 0; i < refs_count; ++i) {
-          const char* pReference = refs.GetReferenceSequence(i, &length);
-          sw.Align(alignments(i,j), pReference, length, sequences[j].c_str(), sequences[j].size());
+          string tmpread = refs.GetReferenceSequence(i, &length);
+          //const char* pReference = refs.GetReferenceSequence(i, &length).c_str();
+          sw.Align(alignments(i,j), tmpread.c_str(), length, sequences[j].c_str(), sequences[j].size());
         }
       }
       
       //print alignment
       for (int j = 0; j < param.batchsize; ++j){
         for (int i = 0; i < refs_count; ++i) {
-          const char* pReference = refs.GetReferenceSequence(i, &length);
           PrintAlignment(readnames[j], sequences[j], alignments(i,j));
           num_total_aligns++;
         }
@@ -104,14 +104,14 @@ int main(int argc, char* argv[]) {
     //perform alignment
     for (int j = 0; j < readsize; ++j){
       for (int i = 0; i < refs_count; ++i) {
-        const char* pReference = refs.GetReferenceSequence(i, &length);
-        sw.Align(alignments(i,j), pReference, length, sequences[j].c_str(), sequences[j].size());
+        string tmpread = refs.GetReferenceSequence(i, &length);
+        //const char* pReference = refs.GetReferenceSequence(i, &length).c_str();
+        sw.Align(alignments(i,j), tmpread.c_str(), length, sequences[j].c_str(), sequences[j].size());
       }
     }
     //print alignment
     for (int j = 0; j < readsize; ++j){
       for (int i = 0; i < refs_count; ++i) {
-        const char* pReference = refs.GetReferenceSequence(i, &length);
         PrintAlignment(readnames[j], sequences[j], alignments(i,j));
         num_total_aligns++;
       }

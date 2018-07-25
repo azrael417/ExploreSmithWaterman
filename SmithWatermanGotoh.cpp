@@ -57,25 +57,6 @@ void CSmithWatermanGotoh::InitArrays(unsigned int max_reference_length, unsigned
 
 CSmithWatermanGotoh::~CSmithWatermanGotoh(void) {}
 
-// string to view and view to string converter
-void ViewToString(string& result, View1D<char> view){
-  result.clear();
-  for(uint64_t l=0; l<view.extent(0); l++){
-      result+=view(l);
-  }
-}
-
-//convert string to view:
-void StringToView(View1D<char> view, const string input){
-  for(uint64_t l=0; l<input.size(); l++){
-    view(l) = input[l];
-  }
-  if(input.size() < view.extent(0)) view(input.size())=0;
-  //for(uint64_t l=input.size(); l<view.extent(0); l++){
-  //  view(l) = 0;
-  //}
-}
-
 
 // aligns the query sequence to the reference using the Smith Waterman Gotoh algorithm
 void CSmithWatermanGotoh::Align(Alignment& alignment, const char* s1, const unsigned int s1Length, const char* s2, const unsigned int& s2Length) {
