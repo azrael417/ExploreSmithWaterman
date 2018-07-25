@@ -38,18 +38,19 @@ bool FastqReader::Close() {
   return true;
 }
 
-bool FastqReader::LoadNextBatch(string* readname,
+bool FastqReader::LoadNextBatch(string** readnames,
                                 string** sequences,
                                 string** quals,
                                 int* readsize,
                                 const int& batchsize){
+  *readnames = new string[batchsize];
   *sequences = new string[batchsize];
   *quals = new string[batchsize];
   
   bool IsOK = true;
   int count = 0;
   while(IsOK & (count<batchsize) ){
-    IsOK = LoadNextRead(readname, &(*sequences)[count], &(*quals)[count]);
+    IsOK = LoadNextRead(&(*readnames)[count], &(*sequences)[count], &(*quals)[count]);
     count++;
   }
   *readsize=count-1;

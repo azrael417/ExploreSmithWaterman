@@ -12,17 +12,17 @@
 
 using namespace std;
 
-inline void PrintAlignment(const string& name, const string& seq,
-                    const string& cigar, const Alignment& al) {
+inline void PrintAlignment(const string& name, const string& seq, const Alignment& al) {
+ 
  cout << "read_name: " << name
-      << endl
+      << '\n'
       << "read_seq: " << seq
-      << endl
+      << '\n'
       << "max score: " << al.sw_score 
       << ", begin_ref: " << al.ref_begin << ", begin_read: " << al.query_begin
       << ", end_ref: " << al.ref_end << ", query_end: " << al.query_end
-      << endl
-      << "cigar: " << cigar
+      << '\n'
+      << "cigar: " << al.cigarCount << al.cigarChar
       << endl;
 }
 
@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
   FastqReader fastq;
   fastq.Open(param.fastq.c_str());
 
-  string readname, *sequences, *quals, cigarSW;
+  string *readnames, *sequences, *quals;
   int length = 0, readsize, num_total_aligns;
   clock_t start, end;
   unsigned int max_sequence_length=0, max_reference_length=0;
@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
   int sequence_count=0;
   {
     FastqReader fastqtmp;
-    string sequence, qual;
+    string readname, sequence, qual;
     fastqtmp.Open(param.fastq.c_str());
     while (fastqtmp.LoadNextRead(&readname, &sequence, &qual)) {
       const unsigned int sequence_length = sequence.size();
@@ -74,30 +74,45 @@ int main(int argc, char* argv[]) {
 			   max_reference_length, max_sequence_length);
 
     //allocate alignment buffer
-    Kokkos::View<Alignment**> alignments=Kokkos::View<Alignment**>("alignments", refs_count, sequence_count);
+    Kokkos::View<Alignment**> alignments=Kokkos::View<Alignment**>("alignments", refs_count, param.batchsize);
 
     //start clock
     start = clock();
 
     //do batches
     num_total_aligns = 0;
-    while (fastq.LoadNextBatch(&readname, &sequences, &quals, &readsize, param.batchsize)) {
+    while (fastq.LoadNextBatch(&readnames, &sequences, &quals, &readsize, param.batchsize)) {
       
+      //perform alignment
       for (int j = 0; j < param.batchsize; ++j){
         for (int i = 0; i < refs_count; ++i) {
           const char* pReference = refs.GetReferenceSequence(i, &length);
-          sw.Align(alignments(i,j), cigarSW, pReference, length, sequences[j].c_str(), sequences[j].size());
-          PrintAlignment(readname, sequences[j], cigarSW, alignments(i,j));
+          sw.Align(alignments(i,j), pReference, length, sequences[j].c_str(), sequences[j].size());
+        }
+      }
+      
+      //print alignment
+      for (int j = 0; j < param.batchsize; ++j){
+        for (int i = 0; i < refs_count; ++i) {
+          const char* pReference = refs.GetReferenceSequence(i, &length);
+          PrintAlignment(readnames[j], sequences[j], alignments(i,j));
           num_total_aligns++;
         }
       }
     }
     //do remainder
+    //perform alignment
     for (int j = 0; j < readsize; ++j){
       for (int i = 0; i < refs_count; ++i) {
         const char* pReference = refs.GetReferenceSequence(i, &length);
-        sw.Align(alignments(i,j), cigarSW, pReference, length, sequences[j].c_str(), sequences[j].size());
-        PrintAlignment(readname, sequences[j], cigarSW, alignments(i,j));
+        sw.Align(alignments(i,j), pReference, length, sequences[j].c_str(), sequences[j].size());
+      }
+    }
+    //print alignment
+    for (int j = 0; j < readsize; ++j){
+      for (int i = 0; i < refs_count; ++i) {
+        const char* pReference = refs.GetReferenceSequence(i, &length);
+        PrintAlignment(readnames[j], sequences[j], alignments(i,j));
         num_total_aligns++;
       }
     }

@@ -24,6 +24,8 @@ struct Alignment {
   uint64_t ref_end;
   uint64_t query_begin;
   uint64_t query_end;
+  uint64_t cigarCount;
+  char cigarChar;
   float sw_score;
 };
 
@@ -35,7 +37,7 @@ public:
 	// destructor
 	~CSmithWatermanGotoh(void);
 	// aligns the query sequence to the reference using the Smith Waterman Gotoh algorithm
-	void Align(Alignment& alignment, string& cigarAl, const char* s1, const unsigned int s1Length, const char* s2, const unsigned int& s2Length);
+	void Align(Alignment& alignment, const char* s1, const unsigned int s1Length, const char* s2, const unsigned int& s2Length);
 	// enables homo-polymer scoring
 	void EnableHomoPolymerGapPenalty(float hpGapOpenPenalty);
 private:
