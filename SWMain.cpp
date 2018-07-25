@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
   int length = 0, readsize, num_total_aligns;
   Alignment alignment;
   clock_t start, end;
-  unsigned int max_sequence_length, max_reference_length;
+  unsigned int max_sequence_length=0, max_reference_length=0;
 
   // determine max sequence length
   {
@@ -59,11 +59,11 @@ int main(int argc, char* argv[]) {
       }
     }
   }
-  cout << "max sequence length: " << max_sequence_length << "\n";
+  cout << "Max sequence length: " << max_sequence_length << "\n";
 
   // max reference length
   max_reference_length = refs.GetMaxSequenceLength();
-  cout << "max reference length: " << max_reference_length << "\n";
+  cout << "Max reference length: " << max_reference_length << "\n";
   
   //scope ensures proper deletion of sw object
   {

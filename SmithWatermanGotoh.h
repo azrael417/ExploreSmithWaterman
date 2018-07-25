@@ -41,8 +41,9 @@ public:
 private:
 	// creates a simple scoring matrix to align the nucleotides and the ambiguity code N
 	void CreateScoringMatrix(void);
-	// deletes the simple scoring matrix
-	void DestroyScoringMatrix(void);
+  //allocate temp buffers
+  void InitArrays();
+  void InitArrays(unsigned int max_reference_length, unsigned int max_sequence_length);
 	// corrects the homopolymer gap order for forward alignments
 	void CorrectHomopolymerGapOrder(const unsigned int numBases, const unsigned int numMismatches);
 	// returns the maximum floating point number
@@ -67,18 +68,18 @@ private:
 	const float mGapOpenPenalty;
 	const float mGapExtendPenalty;
 	// store the backtrace pointers
-	char* mPointers;
+	Kokkos::View<char*> mPointers;
 	// store the vertical gap sizes - assuming gaps are not longer than 32768 bases long
-	short* mSizesOfVerticalGaps;
+	Kokkos::View<short*> mSizesOfVerticalGaps;
 	// store the horizontal gap sizes - assuming gaps are not longer than 32768 bases long
-	short* mSizesOfHorizontalGaps;	
+	Kokkos::View<short*> mSizesOfHorizontalGaps;	
 	// score if xi aligns to a gap after yi
-	float* mQueryGapScores;
+	Kokkos::View<float*> mQueryGapScores;
 	// best score of alignment x1...xi to y1...yi
-	float* mBestScores;
+	Kokkos::View<float*> mBestScores;
 	// our reversed alignment
-	char* mReversedAnchor;
-	char* mReversedQuery;
+	Kokkos::View<char*> mReversedAnchor;
+	Kokkos::View<char*> mReversedQuery;
 	// define static constants
 	static const float FLOAT_NEGATIVE_INFINITY;
 	// toggles the use of the homo-polymer gap open penalty
