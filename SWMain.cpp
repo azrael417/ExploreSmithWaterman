@@ -44,19 +44,27 @@ int main(int argc, char* argv[]) {
   string readname, sequence, qual, cigarSW;
   int length = 0;
   Alignment alignment;
-  CSmithWatermanGotoh sw(param.match, 0-param.mismatch, param.open_gap, param.extend_gap);
+  clock_t start, end;
   
-  clock_t start = clock();
+  //scope ensures proper deletion of sw object
+  {
+    CSmithWatermanGotoh sw(param.match, 0-param.mismatch, param.open_gap, param.extend_gap);
+  
+    //start clock
+    start = clock();
 
-  while (fastq.LoadNextRead(&readname, &sequence, &qual)) {
-    for (int i = 0; i < refs_count; ++i) {
-      const char* pReference = refs.GetReferenceSequence(i, &length);
-      sw.Align(&alignment, cigarSW, pReference, length, sequence.c_str(), sequence.size());
-      PrintAlignment(readname, sequence, cigarSW, alignment);
+    while (fastq.LoadNextRead(&readname, &sequence, &qual)) {
+      for (int i = 0; i < refs_count; ++i) {
+        const char* pReference = refs.GetReferenceSequence(i, &length);
+        sw.Align(&alignment, cigarSW, pReference, length, sequence.c_str(), sequence.size());
+        PrintAlignment(readname, sequence, cigarSW, alignment);
+      }
     }
+    
+    //end clock
+    end = clock();
   }
-
-  clock_t end = clock();
+  
   float cpu_time = (static_cast<float>(end - start)) / static_cast<float>(CLOCKS_PER_SEC);
   fprintf(stdout, "CPU time: %f seconds\n", cpu_time);
 
