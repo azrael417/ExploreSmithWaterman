@@ -30,7 +30,6 @@ SOURCES= SWMain.cpp \
 		fastq_reader.cpp \
 		references.cpp \
 		parameter_parser.cpp \
-		types.cpp \
 		$(KOKKOS_SRC)
 OBJECTS= $(SOURCES:.cpp=.o)
 

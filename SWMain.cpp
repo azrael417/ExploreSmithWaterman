@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
 			   max_reference_length, max_sequence_length);
 
     //allocate alignment buffer
-    Kokkos::View<Alignment**> alignments=Kokkos::View<Alignment**>("alignments", refs_count, param.batchsize);
+    View2D<Alignment> alignments = View2D<Alignment>("alignments", refs_count, param.batchsize);
 
     //start clock
     start = clock();
@@ -87,7 +87,6 @@ int main(int argc, char* argv[]) {
       for (int j = 0; j < param.batchsize; ++j){
         for (int i = 0; i < refs_count; ++i) {
           string tmpread = refs.GetReferenceSequence(i, &length);
-          //const char* pReference = refs.GetReferenceSequence(i, &length).c_str();
           sw.Align(alignments(i,j), tmpread.c_str(), length, sequences[j].c_str(), sequences[j].size());
         }
       }
@@ -105,7 +104,6 @@ int main(int argc, char* argv[]) {
     for (int j = 0; j < readsize; ++j){
       for (int i = 0; i < refs_count; ++i) {
         string tmpread = refs.GetReferenceSequence(i, &length);
-        //const char* pReference = refs.GetReferenceSequence(i, &length).c_str();
         sw.Align(alignments(i,j), tmpread.c_str(), length, sequences[j].c_str(), sequences[j].size());
       }
     }
