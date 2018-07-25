@@ -19,7 +19,8 @@ template<typename T>
 bool convert_from_string(const std::string& s, T& r) {
   std::istringstream iss(s);
   iss >> r;
-  return (iss.fail() || ((std::size_t) iss.tellg()) != s.size()) ? false : true;
+  
+  return (iss.fail()) ? false : true; //|| ((std::size_t) iss.tellg()) != s.size()
 }
 
 void ParseArgumentsOrDie(const int argc, 
@@ -38,12 +39,13 @@ void ParseArgumentsOrDie(const int argc,
     param->command_line += argv[i];
   }
 
-  const char *short_option = "hf:q:m:x:o:e:";
+  const char *short_option = "hf:q:b:m:x:o:e:";
 
   const struct option long_option[] = {
     {"help", no_argument, NULL, 'h'},
     {"fasta", required_argument, NULL, 'f'},
     {"fastq", required_argument, NULL, 'q'},
+    {"batchsize", required_argument, NULL, 'b'},
 
     {"match", required_argument, NULL, 'm'},
     {"mismatch", required_argument, NULL, 'x'},
@@ -72,34 +74,40 @@ void ParseArgumentsOrDie(const int argc,
         param->fasta = optarg; break;
       case 'q':
         param->fastq = optarg; break;
+      case 'b':
+        if(!convert_from_string(optarg, param->batchsize)) {
+          cerr << "WARNING: Cannot parse -b --batchsize." << endl
+               << "         Set it to default 1" << endl;
+        }
+        break;
 
       case 'm':
         if(!convert_from_string(optarg, param->match)) {
-	  cerr << "WARNING: Cannot parse -m --match." << endl
+	        cerr << "WARNING: Cannot parse -m --match." << endl
                << "         Set it to default 10." << endl;
-	}
-	break;
+	      }
+        break;
 	
       case 'x':
         if(!convert_from_string(optarg, param->mismatch)) {
-	  cerr << "WARNING: Cannot parse -M --mismatch." << endl
+          cerr << "WARNING: Cannot parse -M --mismatch." << endl
                << "         Set it to default 9." << endl;
-	}
-	break;
+        }
+        break;
 
       case 'o':
         if(!convert_from_string(optarg, param->open_gap)) {
-	  cerr << "WARNING: Cannot parse -o --open-gap." << endl
+          cerr << "WARNING: Cannot parse -o --open-gap." << endl
                << "         Set it to default 15." << endl;
-	}
-	break;
+        }
+        break;
 
       case 'e':
         if(!convert_from_string(optarg, param->extend_gap)) {
-	  cerr << "WARNING: Cannot parse -e --extend-gap." << endl
+          cerr << "WARNING: Cannot parse -e --extend-gap." << endl
                << "         Set it to default 6.66." << endl;
-	}
-	break;
+        }
+        break;
 
       default: break;
     }
@@ -156,6 +164,7 @@ void PrintHelp(const string& program) {
 
 		<< "Operation parameters:" << endl
 		<< endl
+    << "   -b --batchsize <int>  Batched reads from fastq file [1]." << endl
 		<< "   -m --match <float>    Match score [10]." << endl
 		<< "   -x --mismatch <float> Mismatch score [9]." << endl
 		<< "   -o --open-gap <float> Gap open penalty [15]." << endl

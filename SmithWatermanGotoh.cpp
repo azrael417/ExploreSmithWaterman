@@ -366,7 +366,7 @@ void CSmithWatermanGotoh::CreateScoringMatrix(void) {
 	unsigned int xIndex = 23;
   
   //allocate memory
-  mScoringMatrix = Kokkos::View<float**>("scoring_matrix", MOSAIK_NUM_NUCLEOTIDES, MOSAIK_NUM_NUCLEOTIDES);
+  mScoringMatrix = Kokkos::View<float**>("mScoringMatrix", MOSAIK_NUM_NUCLEOTIDES, MOSAIK_NUM_NUCLEOTIDES);
   
 	// define the N score to be 1/4 of the span between mismatch and match
 	//const short nScore = mMismatchScore + (short)(((mMatchScore - mMismatchScore) / 4.0) + 0.5);

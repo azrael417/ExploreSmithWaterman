@@ -14,6 +14,7 @@ class FastqReader{
   bool Open(const char* filename);
   bool Close();
   bool LoadNextRead(string* readname, string* sequence, string* qual);
+  bool LoadNextBatch(string* readname, string** sequence, string** qual, int* readsize, const int& BatchSize);
  private:
   ifstream file_;
   string readname_;

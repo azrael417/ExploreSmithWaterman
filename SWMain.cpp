@@ -41,8 +41,8 @@ int main(int argc, char* argv[]) {
   FastqReader fastq;
   fastq.Open(param.fastq.c_str());
 
-  string readname, sequence, qual, cigarSW;
-  int length = 0;
+  string readname, *sequences, *quals, cigarSW;
+  int length = 0, readsize;
   Alignment alignment;
   clock_t start, end;
   
@@ -53,11 +53,22 @@ int main(int argc, char* argv[]) {
     //start clock
     start = clock();
 
-    while (fastq.LoadNextRead(&readname, &sequence, &qual)) {
+    //do batches
+    while (fastq.LoadNextBatch(&readname, &sequences, &quals, &readsize, param.batchsize)) {
+      for (int j = 0; j < param.batchsize; ++j){
+        for (int i = 0; i < refs_count; ++i) {
+          const char* pReference = refs.GetReferenceSequence(i, &length);
+          sw.Align(&alignment, cigarSW, pReference, length, sequences[j].c_str(), sequences[j].size());
+          PrintAlignment(readname, sequences[j], cigarSW, alignment);
+        }
+      }
+    }
+    //do remainder
+    for (int j = 0; j < readsize; ++j){
       for (int i = 0; i < refs_count; ++i) {
         const char* pReference = refs.GetReferenceSequence(i, &length);
-        sw.Align(&alignment, cigarSW, pReference, length, sequence.c_str(), sequence.size());
-        PrintAlignment(readname, sequence, cigarSW, alignment);
+        sw.Align(&alignment, cigarSW, pReference, length, sequences[j].c_str(), sequences[j].size());
+        PrintAlignment(readname, sequences[j], cigarSW, alignment);
       }
     }
     

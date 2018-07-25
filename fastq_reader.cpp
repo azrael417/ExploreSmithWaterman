@@ -1,6 +1,7 @@
 #include "fastq_reader.h"
 
 #include <iostream>
+#include <vector>
 
 using std::cerr;
 using std::endl;
@@ -35,6 +36,25 @@ bool FastqReader::Open(const char* filename) {
 bool FastqReader::Close() {
   file_.close();
   return true;
+}
+
+bool FastqReader::LoadNextBatch(string* readname,
+                                string** sequences,
+                                string** quals,
+                                int* readsize,
+                                const int& batchsize){
+  *sequences = new string[batchsize];
+  *quals = new string[batchsize];
+  
+  bool IsOK = true;
+  int count = 0;
+  while(IsOK & (count<batchsize) ){
+    IsOK = LoadNextRead(readname, &(*sequences)[count], &(*quals)[count]);
+    count++;
+  }
+  *readsize=count-1;
+  
+  return IsOK;
 }
 
 bool FastqReader::LoadNextRead(
@@ -79,7 +99,7 @@ bool FastqReader::LoadNextRead(
 	  error_ = true;
 	  return false;
 	}
-        readname_.clear();
+  readname_.clear();
 	readname_ = temp.substr(1, temp.size() - 1);
 	fastq_step = 2;
 	break; // loading the current read done

@@ -12,6 +12,7 @@ struct Parameters {
   string fastq;    // -q  --fastq
 
   // operation parameters
+  int batchsize;
   float match;
   float mismatch;
   float open_gap;
@@ -24,6 +25,7 @@ struct Parameters {
   Parameters()
       : fasta()
       , fastq()
+      , batchsize(1)
       , match(10.0)
       , mismatch(-9.0)
       , open_gap(15.0)
