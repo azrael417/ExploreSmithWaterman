@@ -18,9 +18,12 @@ void References::LoadReferences(const char* filename) {
   sequences_.reserve(100);
 
   int chr_id = 0;
+  max_sequence_length_ = 0;
   names_.resize(chr_id + 1);
   sequences_.resize(chr_id + 1);
   while (reader.LoadNextRead(&names_[chr_id], &sequences_[chr_id])){
+    //compute max sequence length:
+    max_sequence_length_ = sequences_[chr_id].size() > max_sequence_length_ ? sequences_[chr_id].size() : max_sequence_length_;
     ++chr_id;
     names_.resize(chr_id + 1);
     sequences_.resize(chr_id + 1);

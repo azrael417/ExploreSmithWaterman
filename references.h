@@ -16,11 +16,17 @@ class References {
   inline int GetReferenceCount() const;
   inline const char* GetReferenceSequence(const int& id) const;
   inline const char* GetReferenceSequence(const int& id, int* length) const;
+  inline int GetMaxSequenceLength() const;
 
  private:
   std::vector<string> names_;
   std::vector<string> sequences_;
+  int max_sequence_length_;
 };
+
+inline int References::GetMaxSequenceLength() const {
+  return max_sequence_length_;
+}
 
 int References::GetReferenceCount() const {
   return static_cast<int>(names_.size());
