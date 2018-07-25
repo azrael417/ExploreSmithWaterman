@@ -36,13 +36,13 @@ CSmithWatermanGotoh::CSmithWatermanGotoh(float matchScore, float mismatchScore, 
 void CSmithWatermanGotoh::InitArrays(){
   
   //create views
-  mPointers              = Kokkos::View<char*>("mPointers", mCurrentMatrixSize);
-  mSizesOfVerticalGaps   = Kokkos::View<short*>("mSizesOfVerticalGaps", mCurrentMatrixSize);
-  mSizesOfHorizontalGaps = Kokkos::View<short*>("mSizesOfHorizontalGaps", mCurrentMatrixSize);
-  mQueryGapScores        = Kokkos::View<float*>("mQueryGapScores", mCurrentQuerySize + 1);
-  mBestScores            = Kokkos::View<float*>("mBestScores", mCurrentQuerySize + 1);
-  mReversedAnchor        = Kokkos::View<char*>("mReversedAnchor", mCurrentAQSumSize + 1);	// reversed sequence #1
-  mReversedQuery         = Kokkos::View<char*>("mReversedQuery", mCurrentAQSumSize + 1);	// reversed sequence #2
+  mPointers              = View1D<char>("mPointers", mCurrentMatrixSize);
+  mSizesOfVerticalGaps   = View1D<short>("mSizesOfVerticalGaps", mCurrentMatrixSize);
+  mSizesOfHorizontalGaps = View1D<short>("mSizesOfHorizontalGaps", mCurrentMatrixSize);
+  mQueryGapScores        = View1D<float>("mQueryGapScores", mCurrentQuerySize + 1);
+  mBestScores            = View1D<float>("mBestScores", mCurrentQuerySize + 1);
+  mReversedAnchor        = View1D<char>("mReversedAnchor", mCurrentAQSumSize + 1);	// reversed sequence #1
+  mReversedQuery         = View1D<char>("mReversedQuery", mCurrentAQSumSize + 1);	// reversed sequence #2
   
 }
 
@@ -58,7 +58,7 @@ void CSmithWatermanGotoh::InitArrays(unsigned int max_reference_length, unsigned
 CSmithWatermanGotoh::~CSmithWatermanGotoh(void) {}
 
 // string to view and view to string converter
-void ViewToString(string& result, Kokkos::View<char*> view){
+void ViewToString(string& result, View1D<char> view){
   result.clear();
   for(uint64_t l=0; l<view.extent(0); l++){
       result+=view(l);
@@ -66,7 +66,7 @@ void ViewToString(string& result, Kokkos::View<char*> view){
 }
 
 //convert string to view:
-void StringToView(Kokkos::View<char*> view, const string input){
+void StringToView(View1D<char> view, const string input){
   for(uint64_t l=0; l<input.size(); l++){
     view(l) = input[l];
   }
@@ -388,7 +388,7 @@ void CSmithWatermanGotoh::CreateScoringMatrix(void) {
 	unsigned int xIndex = 23;
   
   //allocate memory
-  mScoringMatrix = Kokkos::View<float**>("mScoringMatrix", MOSAIK_NUM_NUCLEOTIDES, MOSAIK_NUM_NUCLEOTIDES);
+  mScoringMatrix = View2D<float>("mScoringMatrix", MOSAIK_NUM_NUCLEOTIDES, MOSAIK_NUM_NUCLEOTIDES);
   
 	// define the N score to be 1/4 of the span between mismatch and match
 	//const short nScore = mMismatchScore + (short)(((mMatchScore - mMismatchScore) / 4.0) + 0.5);
@@ -486,13 +486,13 @@ void CSmithWatermanGotoh::CorrectHomopolymerGapOrder(const unsigned int numBases
 	//char* pReference = al.Reference.Data();
 	//char* pQuery     = al.Query.Data();
 	//const unsigned int numBases = al.Reference.Length();
-	Kokkos::View<char*>* pReference = &mReversedAnchor;
-	Kokkos::View<char*>* pQuery     = &mReversedQuery;
+	View1D<char>* pReference = &mReversedAnchor;
+	View1D<char>* pQuery     = &mReversedQuery;
 
 	// initialize
 	bool hasReferenceGap = false, hasQueryGap = false;
-	Kokkos::View<char*>* pNonGapSeq = NULL;
-	Kokkos::View<char*>* pGapSeq    = NULL;
+	View1D<char>* pNonGapSeq = NULL;
+	View1D<char>* pGapSeq    = NULL;
 	char nonGapBase  = 'J';
 
 	// identify gapped regions

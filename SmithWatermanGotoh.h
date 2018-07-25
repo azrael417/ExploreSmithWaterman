@@ -12,7 +12,7 @@
 #include <string>
 
 //kokkosification
-#include <kokkos/core/src/Kokkos_Core.hpp>
+#include "types.h"
 
 using namespace std;
 
@@ -51,7 +51,7 @@ private:
 	// returns the maximum floating point number
 	static inline float MaxFloats(const float& a, const float& b, const float& c);
 	// our simple scoring matrix
-	Kokkos::View<float**> mScoringMatrix; //size [MOSAIK_NUM_NUCLEOTIDES][MOSAIK_NUM_NUCLEOTIDES];
+	View2D<float> mScoringMatrix; //size [MOSAIK_NUM_NUCLEOTIDES][MOSAIK_NUM_NUCLEOTIDES];
 	// keep track of maximum initialized sizes
 	uint64_t mCurrentMatrixSize;
 	uint64_t mCurrentAnchorSize;
@@ -70,18 +70,18 @@ private:
 	const float mGapOpenPenalty;
 	const float mGapExtendPenalty;
 	// store the backtrace pointers
-	Kokkos::View<char*> mPointers;
+	View1D<char> mPointers;
 	// store the vertical gap sizes - assuming gaps are not longer than 32768 bases long
-	Kokkos::View<short*> mSizesOfVerticalGaps;
+	View1D<short> mSizesOfVerticalGaps;
 	// store the horizontal gap sizes - assuming gaps are not longer than 32768 bases long
-	Kokkos::View<short*> mSizesOfHorizontalGaps;	
+	View1D<short> mSizesOfHorizontalGaps;	
 	// score if xi aligns to a gap after yi
-	Kokkos::View<float*> mQueryGapScores;
+  View1D<float> mQueryGapScores;
 	// best score of alignment x1...xi to y1...yi
-	Kokkos::View<float*> mBestScores;
+  View1D<float> mBestScores;
 	// our reversed alignment
-	Kokkos::View<char*> mReversedAnchor;
-	Kokkos::View<char*> mReversedQuery;
+  View1D<char> mReversedAnchor;
+  View1D<char> mReversedQuery;
 	// define static constants
 	static const float FLOAT_NEGATIVE_INFINITY;
 	// toggles the use of the homo-polymer gap open penalty

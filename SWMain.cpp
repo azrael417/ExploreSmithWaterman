@@ -8,7 +8,7 @@
 #include "fastq_reader.h"
 
 //include kokkos
-
+#include "types.h"
 
 using namespace std;
 
