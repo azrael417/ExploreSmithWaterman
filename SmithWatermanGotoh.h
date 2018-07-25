@@ -12,7 +12,7 @@
 #include <string>
 
 //kokkosification
-//#include <kokkos>
+#include <kokkos/core/src/Kokkos_Core.hpp>
 
 using namespace std;
 
@@ -47,7 +47,7 @@ private:
 	// returns the maximum floating point number
 	static inline float MaxFloats(const float& a, const float& b, const float& c);
 	// our simple scoring matrix
-	float** mScoringMatrix; //size [MOSAIK_NUM_NUCLEOTIDES][MOSAIK_NUM_NUCLEOTIDES];
+	Kokkos::View<float**> mScoringMatrix; //size [MOSAIK_NUM_NUCLEOTIDES][MOSAIK_NUM_NUCLEOTIDES];
 	// keep track of maximum initialized sizes
 	uint64_t mCurrentMatrixSize;
 	uint64_t mCurrentAnchorSize;

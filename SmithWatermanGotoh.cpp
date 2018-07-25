@@ -155,7 +155,7 @@ void CSmithWatermanGotoh::Align(Alignment* alignment, string& cigarAl, const cha
 		for(uint64_t j = 1, l = k + 1; j < queryLen; j++, l++) {
 
 			// calculate our similarity score
-			similarityScore = mScoringMatrix[s1[i - 1] - 'A'][s2[j - 1] - 'A'];
+			similarityScore = mScoringMatrix(s1[i - 1] - 'A', s2[j - 1] - 'A');
 
 			// fill the matrices
 			totalSimilarityScore = bestScoreDiagonal + similarityScore;
@@ -242,7 +242,7 @@ void CSmithWatermanGotoh::Align(Alignment* alignment, string& cigarAl, const cha
 				mReversedQuery[gappedQueryLen++]   = c2;
 
 				// increment our mismatch counter
-				if(mScoringMatrix[c1 - 'A'][c2 - 'A'] == mMismatchScore) numMismatches++;	
+				if(mScoringMatrix(c1 - 'A', c2 - 'A') == mMismatchScore) numMismatches++;	
 				break;
 
 			case Directions_STOP:
@@ -366,7 +366,7 @@ void CSmithWatermanGotoh::CreateScoringMatrix(void) {
 	unsigned int xIndex = 23;
   
   //allocate memory
-  mScoringMatrix = new float*[MOSAIK_NUM_NUCLEOTIDES];
+  mScoringMatrix = Kokkos::View<float**>("scoring_matrix", MOSAIK_NUM_NUCLEOTIDES, MOSAIK_NUM_NUCLEOTIDES);
   
 	// define the N score to be 1/4 of the span between mismatch and match
 	//const short nScore = mMismatchScore + (short)(((mMatchScore - mMismatchScore) / 4.0) + 0.5);
@@ -374,88 +374,81 @@ void CSmithWatermanGotoh::CreateScoringMatrix(void) {
 	// calculate the scoring matrix
 	for(unsigned char i = 0; i < MOSAIK_NUM_NUCLEOTIDES; i++) {
     
-    mScoringMatrix[i] = new float[MOSAIK_NUM_NUCLEOTIDES];
-    
 		for(unsigned char j = 0; j < MOSAIK_NUM_NUCLEOTIDES; j++) {
 
 			// N.B. matching N to everything (while conceptually correct) leads to some
 			// bad alignments, lets make N be a mismatch instead.
 
 			// add the matches or mismatches to the hashtable (N is a mismatch)
-			if((i == nIndex) || (j == nIndex)) mScoringMatrix[i][j] = mMismatchScore;
-			else if((i == xIndex) || (j == xIndex)) mScoringMatrix[i][j] = mMismatchScore;
-			else if(i == j) mScoringMatrix[i][j] = mMatchScore;
-			else mScoringMatrix[i][j] = mMismatchScore;
+			if((i == nIndex) || (j == nIndex)) mScoringMatrix(i,j) = mMismatchScore;
+			else if((i == xIndex) || (j == xIndex)) mScoringMatrix(i,j) = mMismatchScore;
+			else if(i == j) mScoringMatrix(i,j) = mMatchScore;
+			else mScoringMatrix(i,j) = mMismatchScore;
 		}
 	}
 
 	// add ambiguity codes
-	mScoringMatrix['M' - 'A']['A' - 'A'] = mMatchScore;	// M - A
-	mScoringMatrix['A' - 'A']['M' - 'A'] = mMatchScore;
-	mScoringMatrix['M' - 'A']['C' - 'A'] = mMatchScore; // M - C
-	mScoringMatrix['C' - 'A']['M' - 'A'] = mMatchScore;
+	mScoringMatrix('M' - 'A', 'A' - 'A') = mMatchScore;	// M - A
+	mScoringMatrix('A' - 'A', 'M' - 'A') = mMatchScore;
+	mScoringMatrix('M' - 'A', 'C' - 'A') = mMatchScore; // M - C
+	mScoringMatrix('C' - 'A', 'M' - 'A') = mMatchScore;
 
-	mScoringMatrix['R' - 'A']['A' - 'A'] = mMatchScore;	// R - A
-	mScoringMatrix['A' - 'A']['R' - 'A'] = mMatchScore;
-	mScoringMatrix['R' - 'A']['G' - 'A'] = mMatchScore; // R - G
-	mScoringMatrix['G' - 'A']['R' - 'A'] = mMatchScore;
+	mScoringMatrix('R' - 'A', 'A' - 'A') = mMatchScore;	// R - A
+	mScoringMatrix('A' - 'A', 'R' - 'A') = mMatchScore;
+	mScoringMatrix('R' - 'A', 'G' - 'A') = mMatchScore; // R - G
+	mScoringMatrix('G' - 'A', 'R' - 'A') = mMatchScore;
 
-	mScoringMatrix['W' - 'A']['A' - 'A'] = mMatchScore;	// W - A
-	mScoringMatrix['A' - 'A']['W' - 'A'] = mMatchScore;
-	mScoringMatrix['W' - 'A']['T' - 'A'] = mMatchScore; // W - T
-	mScoringMatrix['T' - 'A']['W' - 'A'] = mMatchScore;
+	mScoringMatrix('W' - 'A', 'A' - 'A') = mMatchScore;	// W - A
+	mScoringMatrix('A' - 'A', 'W' - 'A') = mMatchScore;
+	mScoringMatrix('W' - 'A', 'T' - 'A') = mMatchScore; // W - T
+	mScoringMatrix('T' - 'A', 'W' - 'A') = mMatchScore;
 
-	mScoringMatrix['S' - 'A']['C' - 'A'] = mMatchScore;	// S - C
-	mScoringMatrix['C' - 'A']['S' - 'A'] = mMatchScore;
-	mScoringMatrix['S' - 'A']['G' - 'A'] = mMatchScore; // S - G
-	mScoringMatrix['G' - 'A']['S' - 'A'] = mMatchScore;
+	mScoringMatrix('S' - 'A', 'C' - 'A') = mMatchScore;	// S - C
+	mScoringMatrix('C' - 'A', 'S' - 'A') = mMatchScore;
+	mScoringMatrix('S' - 'A', 'G' - 'A') = mMatchScore; // S - G
+	mScoringMatrix('G' - 'A', 'S' - 'A') = mMatchScore;
 
-	mScoringMatrix['Y' - 'A']['C' - 'A'] = mMatchScore;	// Y - C
-	mScoringMatrix['C' - 'A']['Y' - 'A'] = mMatchScore;
-	mScoringMatrix['Y' - 'A']['T' - 'A'] = mMatchScore; // Y - T
-	mScoringMatrix['T' - 'A']['Y' - 'A'] = mMatchScore;
+	mScoringMatrix('Y' - 'A', 'C' - 'A') = mMatchScore;	// Y - C
+	mScoringMatrix('C' - 'A', 'Y' - 'A') = mMatchScore;
+	mScoringMatrix('Y' - 'A', 'T' - 'A') = mMatchScore; // Y - T
+	mScoringMatrix('T' - 'A', 'Y' - 'A') = mMatchScore;
 
-	mScoringMatrix['K' - 'A']['G' - 'A'] = mMatchScore;	// K - G
-	mScoringMatrix['G' - 'A']['K' - 'A'] = mMatchScore;
-	mScoringMatrix['K' - 'A']['T' - 'A'] = mMatchScore; // K - T
-	mScoringMatrix['T' - 'A']['K' - 'A'] = mMatchScore;
+	mScoringMatrix('K' - 'A', 'G' - 'A') = mMatchScore;	// K - G
+	mScoringMatrix('G' - 'A', 'K' - 'A') = mMatchScore;
+	mScoringMatrix('K' - 'A', 'T' - 'A') = mMatchScore; // K - T
+	mScoringMatrix('T' - 'A', 'K' - 'A') = mMatchScore;
 
-	mScoringMatrix['V' - 'A']['A' - 'A'] = mMatchScore;	// V - A
-	mScoringMatrix['A' - 'A']['V' - 'A'] = mMatchScore;
-	mScoringMatrix['V' - 'A']['C' - 'A'] = mMatchScore; // V - C
-	mScoringMatrix['C' - 'A']['V' - 'A'] = mMatchScore;
-	mScoringMatrix['V' - 'A']['G' - 'A'] = mMatchScore; // V - G
-	mScoringMatrix['G' - 'A']['V' - 'A'] = mMatchScore;
+	mScoringMatrix('V' - 'A', 'A' - 'A') = mMatchScore;	// V - A
+	mScoringMatrix('A' - 'A', 'V' - 'A') = mMatchScore;
+	mScoringMatrix('V' - 'A', 'C' - 'A') = mMatchScore; // V - C
+	mScoringMatrix('C' - 'A', 'V' - 'A') = mMatchScore;
+	mScoringMatrix('V' - 'A', 'G' - 'A') = mMatchScore; // V - G
+	mScoringMatrix('G' - 'A', 'V' - 'A') = mMatchScore;
 
-	mScoringMatrix['H' - 'A']['A' - 'A'] = mMatchScore;	// H - A
-	mScoringMatrix['A' - 'A']['H' - 'A'] = mMatchScore;
-	mScoringMatrix['H' - 'A']['C' - 'A'] = mMatchScore; // H - C
-	mScoringMatrix['C' - 'A']['H' - 'A'] = mMatchScore;
-	mScoringMatrix['H' - 'A']['T' - 'A'] = mMatchScore; // H - T
-	mScoringMatrix['T' - 'A']['H' - 'A'] = mMatchScore;
+	mScoringMatrix('H' - 'A', 'A' - 'A') = mMatchScore;	// H - A
+	mScoringMatrix('A' - 'A', 'H' - 'A') = mMatchScore;
+	mScoringMatrix('H' - 'A', 'C' - 'A') = mMatchScore; // H - C
+	mScoringMatrix('C' - 'A', 'H' - 'A') = mMatchScore;
+	mScoringMatrix('H' - 'A', 'T' - 'A') = mMatchScore; // H - T
+	mScoringMatrix('T' - 'A', 'H' - 'A') = mMatchScore;
 
-	mScoringMatrix['D' - 'A']['A' - 'A'] = mMatchScore;	// D - A
-	mScoringMatrix['A' - 'A']['D' - 'A'] = mMatchScore;
-	mScoringMatrix['D' - 'A']['G' - 'A'] = mMatchScore; // D - G
-	mScoringMatrix['G' - 'A']['D' - 'A'] = mMatchScore;
-	mScoringMatrix['D' - 'A']['T' - 'A'] = mMatchScore; // D - T
-	mScoringMatrix['T' - 'A']['D' - 'A'] = mMatchScore;
+	mScoringMatrix('D' - 'A', 'A' - 'A') = mMatchScore;	// D - A
+	mScoringMatrix('A' - 'A', 'D' - 'A') = mMatchScore;
+	mScoringMatrix('D' - 'A', 'G' - 'A') = mMatchScore; // D - G
+	mScoringMatrix('G' - 'A', 'D' - 'A') = mMatchScore;
+	mScoringMatrix('D' - 'A', 'T' - 'A') = mMatchScore; // D - T
+	mScoringMatrix('T' - 'A', 'D' - 'A') = mMatchScore;
 
-	mScoringMatrix['B' - 'A']['C' - 'A'] = mMatchScore;	// B - C
-	mScoringMatrix['C' - 'A']['B' - 'A'] = mMatchScore;
-	mScoringMatrix['B' - 'A']['G' - 'A'] = mMatchScore; // B - G
-	mScoringMatrix['G' - 'A']['B' - 'A'] = mMatchScore;
-	mScoringMatrix['B' - 'A']['T' - 'A'] = mMatchScore; // B - T
-	mScoringMatrix['T' - 'A']['B' - 'A'] = mMatchScore;
+	mScoringMatrix('B' - 'A', 'C' - 'A') = mMatchScore;	// B - C
+	mScoringMatrix('C' - 'A', 'B' - 'A') = mMatchScore;
+	mScoringMatrix('B' - 'A', 'G' - 'A') = mMatchScore; // B - G
+	mScoringMatrix('G' - 'A', 'B' - 'A') = mMatchScore;
+	mScoringMatrix('B' - 'A', 'T' - 'A') = mMatchScore; // B - T
+	mScoringMatrix('T' - 'A', 'B' - 'A') = mMatchScore;
 }
 
 //destroy scoring
-void CSmithWatermanGotoh::DestroyScoringMatrix(void) {
-  for(unsigned char i = 0; i < MOSAIK_NUM_NUCLEOTIDES; i++) {
-    delete [] mScoringMatrix[i];
-  }
-  delete [] mScoringMatrix;
-}
+void CSmithWatermanGotoh::DestroyScoringMatrix(void) {}
 
 // enables homo-polymer scoring
 void CSmithWatermanGotoh::EnableHomoPolymerGapPenalty(float hpGapOpenPenalty) {

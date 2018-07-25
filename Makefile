@@ -38,7 +38,7 @@ OBJECTS= $(SOURCES:.cpp=.o)
 # ----------------
 export CXXFLAGS = -Wall -O3 $(KOKKOS_CXXFLAGS)
 #PROGRAM=SmithWaterman
-LIBS=$(KOKKOS_LDFLAGS) $(KOKKOS_LIBS)
+LIBS=$(KOKKOS_EXTRA_LIBS)
 
 #all: $(PROGRAM)
 
@@ -46,10 +46,10 @@ LIBS=$(KOKKOS_LDFLAGS) $(KOKKOS_LIBS)
 
 $(PROGRAM): $(OBJECTS)
 	@echo "  * linking $(PROGRAM)"
-	@$(CXX) $(CXXFLAGS) -o $@ $^
+	@$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
 
 .PHONY: clean
 
-clean:
+clean: kokkos-clean
 	@echo "Cleaning up."
-	@rm -f *.o $(PROGRAM) *~
+	@rm -f $(OBJECTS) $(PROGRAM) *~

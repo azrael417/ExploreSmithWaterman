@@ -2,10 +2,13 @@
 #include <string.h>
 #include <time.h>
 #include "SmithWatermanGotoh.h"
-#include "BandedSmithWaterman.h"
+//#include "BandedSmithWaterman.h"
 #include "parameter_parser.h"
 #include "references.h"
 #include "fastq_reader.h"
+
+//include kokkos
+
 
 using namespace std;
 
@@ -24,6 +27,10 @@ inline void PrintAlignment(const string& name, const string& seq,
 }
 
 int main(int argc, char* argv[]) {
+  
+  //initialize kokkos
+  Kokkos::initialize();
+  
   Parameters param;
   ParseArgumentsOrDie(argc, argv, &param);
 
@@ -93,5 +100,9 @@ int main(int argc, char* argv[]) {
 	//printf("reference:    %s %3u\n", cigarSW.c_str(), referenceSW);
 	//printf("Banded Smith-Waterman\n");
 	//printf("reference:    %s %3u\n", cigarBSW.c_str(), referenceBSW);
+  
+  //finalize kokkos
+  Kokkos::finalize();
+  
 	return 0;
 }
