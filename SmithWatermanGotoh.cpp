@@ -38,6 +38,8 @@ CSmithWatermanGotoh::~CSmithWatermanGotoh(void) {
 	if(mBestScores)            delete [] mBestScores;
 	if(mReversedAnchor)        delete [] mReversedAnchor;
 	if(mReversedQuery)         delete [] mReversedQuery;
+  //destroy matrix:
+  DestroyScoringMatrix();
 }
 
 // aligns the query sequence to the reference using the Smith Waterman Gotoh algorithm
@@ -362,12 +364,18 @@ void CSmithWatermanGotoh::CreateScoringMatrix(void) {
 
 	unsigned int nIndex = 13;
 	unsigned int xIndex = 23;
-
+  
+  //allocate memory
+  mScoringMatrix = new float*[MOSAIK_NUM_NUCLEOTIDES];
+  
 	// define the N score to be 1/4 of the span between mismatch and match
 	//const short nScore = mMismatchScore + (short)(((mMatchScore - mMismatchScore) / 4.0) + 0.5);
 
 	// calculate the scoring matrix
 	for(unsigned char i = 0; i < MOSAIK_NUM_NUCLEOTIDES; i++) {
+    
+    mScoringMatrix[i] = new float[MOSAIK_NUM_NUCLEOTIDES];
+    
 		for(unsigned char j = 0; j < MOSAIK_NUM_NUCLEOTIDES; j++) {
 
 			// N.B. matching N to everything (while conceptually correct) leads to some
@@ -439,6 +447,14 @@ void CSmithWatermanGotoh::CreateScoringMatrix(void) {
 	mScoringMatrix['G' - 'A']['B' - 'A'] = mMatchScore;
 	mScoringMatrix['B' - 'A']['T' - 'A'] = mMatchScore; // B - T
 	mScoringMatrix['T' - 'A']['B' - 'A'] = mMatchScore;
+}
+
+//destroy scoring
+void CSmithWatermanGotoh::DestroyScoringMatrix(void) {
+  for(unsigned char i = 0; i < MOSAIK_NUM_NUCLEOTIDES; i++) {
+    delete [] mScoringMatrix[i];
+  }
+  delete [] mScoringMatrix;
 }
 
 // enables homo-polymer scoring

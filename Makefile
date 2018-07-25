@@ -6,7 +6,7 @@
 #kokkos path
 KOKKOS_PATH=kokkos
 KOKKOS_DEVICES=OpenMP
-KOKKOS_ARCH=KNL
+KOKKOS_ARCH=HSW
 
 # ----------------
 # compiler type

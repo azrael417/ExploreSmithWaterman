@@ -11,6 +11,9 @@
 #include <sstream>
 #include <string>
 
+//kokkosification
+//#include <kokkos>
+
 using namespace std;
 
 #define MOSAIK_NUM_NUCLEOTIDES 26
@@ -37,12 +40,14 @@ public:
 private:
 	// creates a simple scoring matrix to align the nucleotides and the ambiguity code N
 	void CreateScoringMatrix(void);
+	// deletes the simple scoring matrix
+	void DestroyScoringMatrix(void);
 	// corrects the homopolymer gap order for forward alignments
 	void CorrectHomopolymerGapOrder(const unsigned int numBases, const unsigned int numMismatches);
 	// returns the maximum floating point number
 	static inline float MaxFloats(const float& a, const float& b, const float& c);
 	// our simple scoring matrix
-	float mScoringMatrix[MOSAIK_NUM_NUCLEOTIDES][MOSAIK_NUM_NUCLEOTIDES];
+	float** mScoringMatrix; //size [MOSAIK_NUM_NUCLEOTIDES][MOSAIK_NUM_NUCLEOTIDES];
 	// keep track of maximum initialized sizes
 	uint64_t mCurrentMatrixSize;
 	uint64_t mCurrentAnchorSize;
