@@ -41,7 +41,6 @@ int main(int argc, char* argv[]) {
   FastqReader fastq;
   fastq.Open(param.fastq.c_str());
 
-  string *readnames, *sequences, *quals;
   int length = 0, readsize, num_total_aligns;
   clock_t start, end;
   unsigned int max_sequence_length=0, max_reference_length=0;
@@ -81,20 +80,24 @@ int main(int argc, char* argv[]) {
 
     //do batches
     num_total_aligns = 0;
-    while (fastq.LoadNextBatch(&readnames, &sequences, &quals, &readsize, param.batchsize)) {
+    while (fastq.LoadNextBatch(param.batchsize)) {
       
       //perform alignment
       for (int j = 0; j < param.batchsize; ++j){
         for (int i = 0; i < refs_count; ++i) {
-          string tmpread = refs.GetReferenceSequence(i, &length);
-          sw.Align(alignments(i,j), tmpread.c_str(), length, sequences[j].c_str(), sequences[j].size());
+          auto tmpread = refs.GetReferenceSequence(i, &length);
+          sw.Align(alignments(i, j), tmpread, length, fastq.GetSequence(j), fastq.GetSequenceLength(j));
         }
       }
       
       //print alignment
       for (int j = 0; j < param.batchsize; ++j){
+        string tmpseq, tmpread;
+        ViewToString(tmpseq, fastq.GetSequence(j));
+        ViewToString(tmpread, fastq.GetRead(j));
+        
         for (int i = 0; i < refs_count; ++i) {
-          PrintAlignment(readnames[j], sequences[j], alignments(i,j));
+          PrintAlignment(tmpread, tmpseq, alignments(i,j));
           num_total_aligns++;
         }
       }
@@ -103,14 +106,18 @@ int main(int argc, char* argv[]) {
     //perform alignment
     for (int j = 0; j < readsize; ++j){
       for (int i = 0; i < refs_count; ++i) {
-        string tmpread = refs.GetReferenceSequence(i, &length);
-        sw.Align(alignments(i,j), tmpread.c_str(), length, sequences[j].c_str(), sequences[j].size());
+        auto tmpread = refs.GetReferenceSequence(i, &length);
+        sw.Align(alignments(i, j), tmpread, length, fastq.GetSequence(j), fastq.GetSequenceLength(j));
       }
     }
     //print alignment
     for (int j = 0; j < readsize; ++j){
+      string tmpseq, tmpread;
+      ViewToString(tmpseq, fastq.GetSequence(j));
+      ViewToString(tmpread, fastq.GetRead(j));
+  
       for (int i = 0; i < refs_count; ++i) {
-        PrintAlignment(readnames[j], sequences[j], alignments(i,j));
+        PrintAlignment(tmpread, tmpseq, alignments(i,j));
         num_total_aligns++;
       }
     }
