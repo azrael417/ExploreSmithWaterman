@@ -77,7 +77,7 @@ bool FastqReader::LoadNextBatch(const int& batchsize){
     tmpquals.push_back(tmpqual);
     count++;
   }
-  readsize=count;
+  readsize = IsOK ? count : count-1;
   
   //allocate sequence endpoints
   sequences_end = View1D<int>("sequences_end", readsize);

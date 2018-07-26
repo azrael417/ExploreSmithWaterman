@@ -23,6 +23,7 @@ class FastqReader{
   View1D<char> GetRead(const int& id) const;
   KOKKOS_INLINE_FUNCTION int GetSequenceLength(const int& id) const;
   KOKKOS_INLINE_FUNCTION View1D<int> GetSequenceLengths() const;
+  KOKKOS_INLINE_FUNCTION int GetReadsize() const;
  private:
   ifstream file_;
   string readname_;
@@ -32,6 +33,10 @@ class FastqReader{
   View2D<char> readnames, sequences, quals;
   View1D<int> sequences_end;
 };
+
+KOKKOS_INLINE_FUNCTION int FastqReader::GetReadsize() const{ 
+  return readsize;
+}
 
 KOKKOS_INLINE_FUNCTION int FastqReader::GetSequenceLength(const int& id) const{ 
   if(id >= readsize) return 0;
