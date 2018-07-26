@@ -15,10 +15,10 @@ class References {
   void LoadReferences(const char* filename);
   //bool GetSequence(const int& chr_id, const int& pos, const int& length, 
   //                 string* seq) const;
-  inline int GetReferenceCount() const;
-  inline View1D<char> GetReferenceSequence(const int& id) const;
-  inline View1D<char> GetReferenceSequence(const int& id, int* length) const;
-  inline int GetMaxSequenceLength() const;
+  KOKKOS_INLINE_FUNCTION int GetReferenceCount() const;
+  KOKKOS_INLINE_FUNCTION View1D<char> GetReferenceSequence(const int& id) const;
+  KOKKOS_INLINE_FUNCTION View1D<char> GetReferenceSequence(const int& id, int* length) const;
+  KOKKOS_INLINE_FUNCTION int GetMaxSequenceLength() const;
 
  private:
   int max_sequence_length_, max_name_length_;
@@ -26,16 +26,16 @@ class References {
   View1D<int> sequences_end_;
 };
 
-inline int References::GetMaxSequenceLength() const {
+KOKKOS_INLINE_FUNCTION int References::GetMaxSequenceLength() const {
   return max_sequence_length_;
 }
 
-int References::GetReferenceCount() const {
+KOKKOS_INLINE_FUNCTION int References::GetReferenceCount() const {
   return static_cast<int>(names_.extent(0));
 }
 
 
-inline View1D<char> References::GetReferenceSequence(const int& id) const {
+KOKKOS_INLINE_FUNCTION View1D<char> References::GetReferenceSequence(const int& id) const {
   if (id >= static_cast<int>(sequences_.extent(0))) {
     std::cerr << "ERROR: The requested id(" << id << ") is invalid."<< std::endl;
     return View1D<char>();
@@ -45,7 +45,7 @@ inline View1D<char> References::GetReferenceSequence(const int& id) const {
 }
 
 
-inline View1D<char> References::GetReferenceSequence(const int& id, int* length) const {
+KOKKOS_INLINE_FUNCTION View1D<char> References::GetReferenceSequence(const int& id, int* length) const {
   View1D<char> result = GetReferenceSequence(id);
   if (result.size() != 0) *length = sequences_end_(id);
   else length = 0;

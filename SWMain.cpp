@@ -85,14 +85,15 @@ int main(int argc, char* argv[]) {
       //perform alignment
       //for (int j = 0; j < param.batchsize; ++j){
       //  for (int i = 0; i < refs_count; ++i) {
-
+      auto sequences = fastq.GetSequences();
+      auto sequences_length = fastq.GetSequenceLengths();
+      
       Kokkos::parallel_for(t_policy({0,0},{param.batchsize, refs_count}, {1,1}),
 			   KOKKOS_LAMBDA(const int &j, const int &i){
 			     int tmplen;
 			     //auto tmpread = refs.GetReferenceSequence(i, &length);
 			     auto tmpread = refs.GetReferenceSequence(i, &tmplen);
-			     auto tmpseq = fastq.GetSequence(j);
-			     sw.Align(alignments(i, j), tmpread, tmplen, tmpseq, fastq.GetSequenceLength(j));
+			     sw.Align(alignments(i, j), tmpread, tmplen, Kokkos::subview(sequences, j, Kokkos::ALL), sequences_length(j));
 			     //			     sw.Align(alignments(i, j), tmpread, tmplen, fastq.GetSequence(j), fastq.GetSequenceLength(j));
 			     //sw.Align(alignments(i, j), tmpread, length, fastq.GetSequence(j), fastq.GetSequenceLength(j));
 			   });
