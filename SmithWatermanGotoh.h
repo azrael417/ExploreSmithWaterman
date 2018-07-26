@@ -24,6 +24,8 @@ using namespace std;
 #define DIRECTIONS_DIAGONAL 2
 #define DIRECTIONS_UP 3
 
+#define FLOAT_NEGATIVE_INFINITY -1e+30
+
 struct Alignment {
   uint64_t ref_begin;
   uint64_t ref_end;
@@ -81,14 +83,14 @@ private:
 	// store the horizontal gap sizes - assuming gaps are not longer than 32768 bases long
 	View1D<short> mSizesOfHorizontalGaps;	
 	// score if xi aligns to a gap after yi
-  View1D<float> mQueryGapScores;
+	View1D<float> mQueryGapScores;
 	// best score of alignment x1...xi to y1...yi
-  View1D<float> mBestScores;
+	View1D<float> mBestScores;
 	// our reversed alignment
-  View1D<char> mReversedAnchor;
-  View1D<char> mReversedQuery;
+	View1D<char> mReversedAnchor;
+	View1D<char> mReversedQuery;
 	// define static constants
-	static const float FLOAT_NEGATIVE_INFINITY;
+	//static const float FLOAT_NEGATIVE_INFINITY;
 	// toggles the use of the homo-polymer gap open penalty
 	bool mUseHomoPolymerGapOpenPenalty;
 	// specifies the homo-polymer gap open penalty
