@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-const float CSmithWatermanGotoh::FLOAT_NEGATIVE_INFINITY = (float)-1e+30;
+//const float CSmithWatermanGotoh::FLOAT_NEGATIVE_INFINITY = (float)-1e+30;
 
 //const char CSmithWatermanGotoh::Directions_STOP     = 0;
 //const char CSmithWatermanGotoh::Directions_LEFT     = 1;
