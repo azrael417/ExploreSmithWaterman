@@ -67,6 +67,9 @@ int main(int argc, char* argv[]) {
   cout << "Number of references: " << refs_count << endl;
   cout << "Max reference length: " << max_reference_length << "\n";
   
+  //handle negative num batches
+  if(param.num_batches < 0) param.num_batches = sequence_count;
+  
   //scope ensures proper deletion of sw object
   {
     CSmithWatermanGotoh sw(param.match, 0-param.mismatch, param.open_gap, param.extend_gap, 
@@ -80,7 +83,8 @@ int main(int argc, char* argv[]) {
 
     //do batches
     num_total_aligns = 0;
-    while (fastq.LoadNextBatch(param.batchsize)) {
+    int num_batches=0;
+    while ( fastq.LoadNextBatch(param.batchsize) & (num_batches<param.num_batches) ) {
       
       //perform alignment
       auto sequences = fastq.GetSequences();
@@ -105,6 +109,7 @@ int main(int argc, char* argv[]) {
           num_total_aligns++;
         }
       }
+      num_batches++;
     }
     //do remainder if necessary
     int remaindercount = fastq.GetReadsize();
