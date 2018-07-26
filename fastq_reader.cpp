@@ -92,9 +92,9 @@ bool FastqReader::LoadNextBatch(const int& batchsize){
   }
   
   //allocate view memory
-  readnames = View2D<char>("readnames", readsize, max_name_length);
-  sequences = View2D<char>("sequences", readsize, max_seq_length);
-  quals = View2D<char>("quals", readsize, max_qual_length);
+  readnames = View2D<char, Kokkos::LayoutRight>("readnames", readsize, max_name_length);
+  sequences = View2D<char, Kokkos::LayoutRight>("sequences", readsize, max_seq_length);
+  quals = View2D<char, Kokkos::LayoutRight>("quals", readsize, max_qual_length);
   
   //copy in:
   for(unsigned int id = 0; id < readsize; ++id){
