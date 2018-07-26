@@ -19,6 +19,7 @@ void TrimString(const char delimiter, string* readname){
 FastqReader::FastqReader()
   : file_()
   , readname_()
+  , readsize(0)
   , line_(0)
   , error_(false)
 {}
@@ -38,25 +39,91 @@ bool FastqReader::Close() {
   return true;
 }
 
-bool FastqReader::LoadNextBatch(string** readnames,
-                                string** sequences,
-                                string** quals,
-                                int* readsize,
-                                const int& batchsize){
-  *readnames = new string[batchsize];
-  *sequences = new string[batchsize];
-  *quals = new string[batchsize];
+//bool FastqReader::LoadNextBatch(string** readnames,
+//                                string** sequences,
+//                                string** quals,
+//                                int* readsize,
+//                                const int& batchsize){
+//  *readnames = new string[batchsize];
+//  *sequences = new string[batchsize];
+//  *quals = new string[batchsize];
+//  
+//  bool IsOK = true;
+//  int count = 0;
+//  while(IsOK & (count<batchsize) ){
+//    IsOK = LoadNextRead(&(*readnames)[count], &(*sequences)[count], &(*quals)[count]);
+//    count++;
+//  }
+//  *readsize=count-1;
+//  
+//  return IsOK;
+//}
+
+
+bool FastqReader::LoadNextBatch(const int& batchsize){
+  //*readnames = new string[batchsize];
+  //*sequences = new string[batchsize];
+  //*quals = new string[batchsize];
+  
+  string tmpreadname, tmpsequence, tmpqual;
+  std::vector<string> tmpreadnames, tmpsequences, tmpquals;
   
   bool IsOK = true;
   int count = 0;
   while(IsOK & (count<batchsize) ){
-    IsOK = LoadNextRead(&(*readnames)[count], &(*sequences)[count], &(*quals)[count]);
+    IsOK = LoadNextRead(&tmpreadname, &tmpsequence, &tmpqual);
+    tmpreadnames.push_back(tmpreadname);
+    tmpsequences.push_back(tmpsequence);
+    tmpquals.push_back(tmpqual);
     count++;
   }
-  *readsize=count-1;
+  readsize=count;
+  
+  //allocate sequence endpoints
+  sequences_end = View1D<int>("sequences_end", readsize);
+  
+  //determine max counts
+  int max_name_length=0, max_seq_length=0, max_qual_length=0;
+  for(unsigned int id = 0; id < readsize; ++id){
+    max_name_length = tmpreadnames[id].size() > max_name_length ? tmpreadnames[id].size() : max_name_length;
+    max_seq_length = tmpsequences[id].size() > max_seq_length ? tmpsequences[id].size() : max_seq_length;
+    sequences_end(id) = tmpsequences[id].size();
+    max_qual_length = tmpquals[id].size() > max_qual_length ? tmpquals[id].size() : max_qual_length;
+  }
+  
+  //allocate view memory
+  readnames = View2D<char>("readnames", readsize, max_name_length);
+  sequences = View2D<char>("sequences", readsize, max_seq_length);
+  quals = View2D<char>("quals", readsize, max_qual_length);
+  
+  //copy in:
+  for(unsigned int id = 0; id < readsize; ++id){
+    StringToView(Kokkos::subview(readnames, id, Kokkos::ALL), tmpreadnames[id]);
+    StringToView(Kokkos::subview(sequences, id, Kokkos::ALL), tmpsequences[id]);
+    StringToView(Kokkos::subview(quals, id, Kokkos::ALL), tmpquals[id]);
+  }
   
   return IsOK;
 }
+
+
+int FastqReader::GetSequenceLength(const int& id) const{ 
+  if(id >= readsize) return 0;
+  else return sequences_end(id); 
+}
+
+
+View1D<char> FastqReader::GetSequence(const int& id){
+  if(id >= readsize) return View1D<char>();
+  else return Kokkos::subview(sequences, id, Kokkos::ALL);
+}
+
+
+View1D<char> FastqReader::GetRead(const int& id){
+  if(id >= readsize) return View1D<char>();
+  else return Kokkos::subview(readnames, id, Kokkos::ALL);
+}
+
 
 bool FastqReader::LoadNextRead(
     string* readname, 

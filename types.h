@@ -18,6 +18,7 @@ void ViewToString(std::string& result, V view){
   static_assert( std::is_same<char,typename V::value_type>::value, "Error: the view-type has to be char.");
   result.clear();
   for(uint64_t l=0; l<view.extent(0); l++){
+    if(view(l)=='\0') break;
     result+=view(l);
   }
 }
@@ -29,7 +30,7 @@ void StringToView(V view, const std::string input){
   for(uint64_t l=0; l<input.size(); l++){
     view(l) = input[l];
   }
-  if(input.size() < view.extent(0)) view(input.size())=0;
+  if(input.size() < view.extent(0)) view(input.size())='\0';
 }
 
 
