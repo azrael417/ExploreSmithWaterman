@@ -59,7 +59,7 @@ CSmithWatermanGotoh::~CSmithWatermanGotoh(void) {}
 
 
 // aligns the query sequence to the reference using the Smith Waterman Gotoh algorithm
-void CSmithWatermanGotoh::Align(Alignment& alignment, View1D<char> s1, const unsigned int s1Length, View1D<char> s2, const unsigned int& s2Length) {
+void CSmithWatermanGotoh::Align(Alignment& alignment, View1D<char> s1, const unsigned int s1Length, View1D<char> s2, const unsigned int& s2Length) const {
 
 	if((s1Length == 0) || (s2Length == 0)) {
 		cout << "ERROR: Found a read with a zero length." << endl;

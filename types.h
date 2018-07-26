@@ -33,5 +33,7 @@ void StringToView(V view, const std::string input){
   if(input.size() < view.extent(0)) view(input.size())='\0';
 }
 
+// range interation policy
+typedef Kokkos::MDRangePolicy<Kokkos::Rank<2,Kokkos::Iterate::Right,Kokkos::Iterate::Right>> t_policy;
 
 #endif

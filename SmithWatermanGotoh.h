@@ -37,7 +37,7 @@ public:
 	// destructor
 	~CSmithWatermanGotoh(void);
 	// aligns the query sequence to the reference using the Smith Waterman Gotoh algorithm
-	void Align(Alignment& alignment, View1D<char> s1, const unsigned int s1Length, View1D<char> s2, const unsigned int& s2Length);
+	void Align(Alignment& alignment, View1D<char> s1, const unsigned int s1Length, View1D<char> s2, const unsigned int& s2Length) const;
 	// enables homo-polymer scoring
 	void EnableHomoPolymerGapPenalty(float hpGapOpenPenalty);
 private:

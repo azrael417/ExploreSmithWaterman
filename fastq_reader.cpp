@@ -107,19 +107,20 @@ bool FastqReader::LoadNextBatch(const int& batchsize){
 }
 
 
-int FastqReader::GetSequenceLength(const int& id) const{ 
+/*
+inline int FastqReader::GetSequenceLength(const int& id) const{ 
   if(id >= readsize) return 0;
   else return sequences_end(id); 
 }
 
 
-View1D<char> FastqReader::GetSequence(const int& id){
+inline View1D<char> FastqReader::GetSequence(const int& id) const {
   if(id >= readsize) return View1D<char>();
   else return Kokkos::subview(sequences, id, Kokkos::ALL);
 }
+*/
 
-
-View1D<char> FastqReader::GetRead(const int& id){
+View1D<char> FastqReader::GetRead(const int& id) const {
   if(id >= readsize) return View1D<char>();
   else return Kokkos::subview(readnames, id, Kokkos::ALL);
 }
