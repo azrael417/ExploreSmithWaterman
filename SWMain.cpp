@@ -81,7 +81,8 @@ int main(int argc, char* argv[]) {
     //do batches
     num_total_aligns = 0;
     while (fastq.LoadNextBatch(param.batchsize)) {
-      
+      //if (num_total_aligns > 100) break;
+
       //perform alignment
       for (int j = 0; j < param.batchsize; ++j){
         for (int i = 0; i < refs_count; ++i) {
@@ -129,7 +130,7 @@ int main(int argc, char* argv[]) {
   float cpu_time = (static_cast<float>(end - start)) / static_cast<float>(CLOCKS_PER_SEC);
   fprintf(stdout, "CPU time: %f seconds\n", cpu_time);
   fprintf(stdout, "Number of total alignments: %i\n", num_total_aligns);
-
+  fprintf(stdout, "Alignments per second: %f\n", (float)num_total_aligns/ cpu_time);
 	//=====================================================
 	// defind the hash region
 	// first.first:   reference begin
