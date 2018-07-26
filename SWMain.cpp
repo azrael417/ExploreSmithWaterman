@@ -86,8 +86,8 @@ int main(int argc, char* argv[]) {
       //perform alignment
       for (int j = 0; j < param.batchsize; ++j){
         for (int i = 0; i < refs_count; ++i) {
-          string tmpread = refs.GetReferenceSequence(i, &length);
-          sw.Align(alignments(i,j), tmpread.c_str(), length, sequences[j].c_str(), sequences[j].size());
+          auto tmpread = refs.GetReferenceSequence(i, &length);
+          sw.Align(alignments(i,j), tmpread, length, sequences[j].c_str(), sequences[j].size());
         }
       }
       
@@ -103,8 +103,8 @@ int main(int argc, char* argv[]) {
     //perform alignment
     for (int j = 0; j < readsize; ++j){
       for (int i = 0; i < refs_count; ++i) {
-        string tmpread = refs.GetReferenceSequence(i, &length);
-        sw.Align(alignments(i,j), tmpread.c_str(), length, sequences[j].c_str(), sequences[j].size());
+        auto tmpread = refs.GetReferenceSequence(i, &length);
+        sw.Align(alignments(i,j), tmpread, length, sequences[j].c_str(), sequences[j].size());
       }
     }
     //print alignment

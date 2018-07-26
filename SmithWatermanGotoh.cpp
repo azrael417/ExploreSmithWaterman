@@ -59,7 +59,7 @@ CSmithWatermanGotoh::~CSmithWatermanGotoh(void) {}
 
 
 // aligns the query sequence to the reference using the Smith Waterman Gotoh algorithm
-void CSmithWatermanGotoh::Align(Alignment& alignment, const char* s1, const unsigned int s1Length, const char* s2, const unsigned int& s2Length) {
+void CSmithWatermanGotoh::Align(Alignment& alignment, View1D<char> s1, const unsigned int s1Length, const char* s2, const unsigned int& s2Length) {
 
 	if((s1Length == 0) || (s2Length == 0)) {
 		cout << "ERROR: Found a read with a zero length." << endl;
@@ -118,7 +118,7 @@ void CSmithWatermanGotoh::Align(Alignment& alignment, const char* s1, const unsi
 		for(uint64_t j = 1, l = k + 1; j < queryLen; j++, l++) {
 
 			// calculate our similarity score
-			similarityScore = mScoringMatrix(s1[i - 1] - 'A', s2[j - 1] - 'A');
+			similarityScore = mScoringMatrix(s1(i - 1) - 'A', s2[j - 1] - 'A');
 
 			// fill the matrices
 			totalSimilarityScore = bestScoreDiagonal + similarityScore;
@@ -143,7 +143,7 @@ void CSmithWatermanGotoh::Align(Alignment& alignment, const char* s1, const unsi
 
 			// compute the homo-polymer gap score if enabled
 			if(mUseHomoPolymerGapOpenPenalty)
-				if((i > 1) && (s1[i - 1] == s1[i - 2]))
+				if((i > 1) && (s1(i - 1) == s1(i - 2)))
 					referenceGapOpenScore = mBestScores(j - 1) - mHomoPolymerGapOpenPenalty;
 
 			if(referenceGapExtendScore > referenceGapOpenScore) {
@@ -197,7 +197,7 @@ void CSmithWatermanGotoh::Align(Alignment& alignment, const char* s1, const unsi
 		switch(mPointers[ck + cj]) {
 
 			case Directions_DIAGONAL:
-				c1 = s1[--ci];
+				c1 = s1(--ci);
 				c2 = s2[--cj];
 				ck -= queryLen;
 
@@ -214,7 +214,7 @@ void CSmithWatermanGotoh::Align(Alignment& alignment, const char* s1, const unsi
 
 			case Directions_UP:
 				for(uint64_t l = 0, len = mSizesOfVerticalGaps(ck + cj); l < len; l++) {
-					mReversedAnchor(gappedAnchorLen++) = s1[--ci];
+					mReversedAnchor(gappedAnchorLen++) = s1(--ci);
 					mReversedQuery(gappedQueryLen++)   = GAP;
 					ck -= queryLen;
 					numMismatches++;

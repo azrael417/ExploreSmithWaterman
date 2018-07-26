@@ -62,35 +62,35 @@ void References::LoadReferences(const char* filename) {
   reader.Close();
 }
 
-bool References::GetSequence(
-    const int& chr_id, 
-    const int& pos, 
-    const int& length,
-    string* seq) const {
-  
-  if (chr_id >= static_cast<int>(names_.extent(0))) {
-    cerr << "ERROR: The reference id is invalid." 
-         << endl
-         << "       The total references is " << names_.extent(0)
-	 << "; the request is" << chr_id << "."  
-	 << endl;
-    return false;
-  }
-    
-  if (pos >= static_cast<int>(sequences_end_(chr_id))) {
-    cerr << "ERROR: The requested position is invalid." 
-         << endl
-         << "       The length of reference is " << sequences_end_(chr_id)
-	       << "; the request is" << pos << "."  
-        << endl;
-    return false;
-  }
-
-  int remain = sequences_end_(chr_id) - pos;
-  int len = (remain < length) ? remain : length;
-
-  ViewToString(*seq, Kokkos::subview(sequences_, chr_id, Kokkos::ALL));
-  *seq = (*seq).substr(pos, len);
-  return true;
-}
+//bool References::GetSequence(
+//    const int& chr_id, 
+//    const int& pos, 
+//    const int& length,
+//    string* seq) const {
+//  
+//  if (chr_id >= static_cast<int>(names_.extent(0))) {
+//    cerr << "ERROR: The reference id is invalid." 
+//         << endl
+//         << "       The total references is " << names_.extent(0)
+//	 << "; the request is" << chr_id << "."  
+//	 << endl;
+//    return false;
+//  }
+//    
+//  if (pos >= static_cast<int>(sequences_end_(chr_id))) {
+//    cerr << "ERROR: The requested position is invalid." 
+//         << endl
+//         << "       The length of reference is " << sequences_end_(chr_id)
+//	       << "; the request is" << pos << "."  
+//        << endl;
+//    return false;
+//  }
+//
+//  int remain = sequences_end_(chr_id) - pos;
+//  int len = (remain < length) ? remain : length;
+//
+//  ViewToString(*seq, Kokkos::subview(sequences_, chr_id, Kokkos::ALL));
+//  *seq = (*seq).substr(pos, len);
+//  return true;
+//}
 
