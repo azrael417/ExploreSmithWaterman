@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
   FastqReader fastq;
   fastq.Open(param.fastq.c_str());
 
-  int length = 0, readsize, num_total_aligns;
+  int length = 0, num_total_aligns;
   clock_t start, end;
   unsigned int max_sequence_length=0, max_reference_length=0;
 
@@ -83,22 +83,16 @@ int main(int argc, char* argv[]) {
     while (fastq.LoadNextBatch(param.batchsize)) {
       
       //perform alignment
-      //for (int j = 0; j < param.batchsize; ++j){
-      //  for (int i = 0; i < refs_count; ++i) {
       auto sequences = fastq.GetSequences();
       auto sequences_length = fastq.GetSequenceLengths();
       
-      Kokkos::parallel_for(t_policy({0,0},{param.batchsize, refs_count}, {1,1}),
+      Kokkos::parallel_for(t_policy({0,0}, {param.batchsize, refs_count}, {param.batchsize, refs_count}),
+      //Kokkos::parallel_for(t_policy({0,0}, {param.batchsize, refs_count}, {1, 1}),
 			   KOKKOS_LAMBDA(const int &j, const int &i){
 			     int tmplen;
-			     //auto tmpread = refs.GetReferenceSequence(i, &length);
 			     auto tmpread = refs.GetReferenceSequence(i, &tmplen);
 			     sw.Align(alignments(i, j), tmpread, tmplen, Kokkos::subview(sequences, j, Kokkos::ALL), sequences_length(j));
-			     //			     sw.Align(alignments(i, j), tmpread, tmplen, fastq.GetSequence(j), fastq.GetSequenceLength(j));
-			     //sw.Align(alignments(i, j), tmpread, length, fastq.GetSequence(j), fastq.GetSequenceLength(j));
 			   });
-			  
-      
       
       //print alignment
       for (int j = 0; j < param.batchsize; ++j){
@@ -112,23 +106,26 @@ int main(int argc, char* argv[]) {
         }
       }
     }
-    //do remainder
-    //perform alignment
-    for (int j = 0; j < readsize; ++j){
-      for (int i = 0; i < refs_count; ++i) {
-        auto tmpread = refs.GetReferenceSequence(i, &length);
-        sw.Align(alignments(i, j), tmpread, length, fastq.GetSequence(j), fastq.GetSequenceLength(j));
+    //do remainder if necessary
+    int remaindercount = fastq.GetReadsize();
+    if(remaindercount != param.batchsize){
+      //perform alignment
+      for (int j = 0; j < remaindercount; ++j){
+        for (int i = 0; i < refs_count; ++i) {
+          auto tmpread = refs.GetReferenceSequence(i, &length);
+          sw.Align(alignments(i, j), tmpread, length, fastq.GetSequence(j), fastq.GetSequenceLength(j));
+        }
       }
-    }
-    //print alignment
-    for (int j = 0; j < readsize; ++j){
-      string tmpseq, tmpread;
-      ViewToString(tmpseq, fastq.GetSequence(j));
-      ViewToString(tmpread, fastq.GetRead(j));
+      //print alignment
+      for (int j = 0; j < remaindercount; ++j){
+        string tmpseq, tmpread;
+        ViewToString(tmpseq, fastq.GetSequence(j));
+        ViewToString(tmpread, fastq.GetRead(j));
   
-      for (int i = 0; i < refs_count; ++i) {
-        PrintAlignment(tmpread, tmpseq, alignments(i,j));
-        num_total_aligns++;
+        for (int i = 0; i < refs_count; ++i) {
+          PrintAlignment(tmpread, tmpseq, alignments(i,j));
+          num_total_aligns++;
+        }
       }
     }
     
