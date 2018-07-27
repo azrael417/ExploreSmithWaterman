@@ -37,9 +37,9 @@ void References::LoadReferences(const char* filename) {
   tmpsequences_.erase(tmpsequences_.begin() + chr_id);
   
   //create view:
-  names_ = View2D<char, Kokkos::LayoutRight>("names_", tmpnames_.size(), max_name_length_);
-  sequences_end_ = View1D<int>("sequences_end_", tmpsequences_.size());
-  sequences_ = View2D<char, Kokkos::LayoutRight>("sequences_", tmpsequences_.size(), max_sequence_length_);
+  names_ = View2D<char, Kokkos::LayoutRight, Kokkos::HostSpace>("names_", tmpnames_.size(), max_name_length_);
+  sequences_end_ = View1D<int, Kokkos::HostSpace>("sequences_end_", tmpsequences_.size());
+  sequences_ = View2D<char, Kokkos::LayoutRight, Kokkos::HostSpace>("sequences_", tmpsequences_.size(), max_sequence_length_);
   
   //fill
   for(unsigned int i=0; i<tmpnames_.size(); i++){
@@ -58,6 +58,10 @@ void References::LoadReferences(const char* filename) {
     }
     else sequences_end_(i) = max_sequence_length_;
   }
+
+  //create mirrors and upload
+  d_sequences_end_ = Kokkos::create_mirror_view_and_copy(Kokkos::DefaultExecutionSpace(), sequences_end_);
+  d_sequences_ = Kokkos::create_mirror_view_and_copy(Kokkos::DefaultExecutionSpace(), sequences_);
   
   reader.Close();
 }

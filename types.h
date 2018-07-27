@@ -34,6 +34,6 @@ void StringToView(V view, const std::string input){
 }
 
 // range interation policy
-typedef Kokkos::MDRangePolicy<Kokkos::Rank<2,Kokkos::Iterate::Right,Kokkos::Iterate::Right>> t_policy;
+typedef Kokkos::MDRangePolicy<Kokkos::Rank<2,Kokkos::Iterate::Right,Kokkos::Iterate::Right>> range_policy;
 
 #endif

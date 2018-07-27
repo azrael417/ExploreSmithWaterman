@@ -80,7 +80,7 @@ bool FastqReader::LoadNextBatch(const int& batchsize){
   readsize = IsOK ? count : count-1;
   
   //allocate sequence endpoints
-  sequences_end = View1D<int>("sequences_end", readsize);
+  sequences_end = View1D<int, Kokkos::HostSpace>("sequences_end", readsize);
   
   //determine max counts
   int max_name_length=0, max_seq_length=0, max_qual_length=0;
@@ -92,9 +92,9 @@ bool FastqReader::LoadNextBatch(const int& batchsize){
   }
   
   //allocate view memory
-  readnames = View2D<char, Kokkos::LayoutRight>("readnames", readsize, max_name_length);
-  sequences = View2D<char, Kokkos::LayoutRight>("sequences", readsize, max_seq_length);
-  quals = View2D<char, Kokkos::LayoutRight>("quals", readsize, max_qual_length);
+  readnames = View2D<char, Kokkos::LayoutRight, Kokkos::HostSpace>("readnames", readsize, max_name_length);
+  sequences = View2D<char, Kokkos::LayoutRight, Kokkos::HostSpace>("sequences", readsize, max_seq_length);
+  quals = View2D<char, Kokkos::LayoutRight, Kokkos::HostSpace>("quals", readsize, max_qual_length);
   
   //copy in:
   for(unsigned int id = 0; id < readsize; ++id){
@@ -102,6 +102,10 @@ bool FastqReader::LoadNextBatch(const int& batchsize){
     StringToView(Kokkos::subview(sequences, id, Kokkos::ALL), tmpsequences[id]);
     StringToView(Kokkos::subview(quals, id, Kokkos::ALL), tmpquals[id]);
   }
+
+  //create mirrors and upload
+  d_sequences_end = Kokkos::create_mirror_view_and_copy(Kokkos::DefaultExecutionSpace(), sequences_end);
+  d_sequences = Kokkos::create_mirror_view_and_copy(Kokkos::DefaultExecutionSpace(), sequences);
   
   return IsOK;
 }

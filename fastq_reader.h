@@ -12,8 +12,8 @@ class FastqReader{
  public:
   FastqReader();
   ~FastqReader();
-  KOKKOS_INLINE_FUNCTION FastqReader (const FastqReader& ) = default;
-  KOKKOS_INLINE_FUNCTION FastqReader & operator= (const FastqReader& ) = default;
+  //KOKKOS_INLINE_FUNCTION FastqReader (const FastqReader& ) = default;
+  //KOKKOS_INLINE_FUNCTION FastqReader & operator= (const FastqReader& ) = default;
   bool Open(const char* filename);
   bool Close();
   bool LoadNextRead(string* readname, string* sequence, string* qual);
@@ -30,8 +30,10 @@ class FastqReader{
   int line_;
   bool error_;
   int readsize;
-  View2D<char> readnames, sequences, quals;
-  View1D<int> sequences_end;
+  View2D<char, Kokkos::LayoutRight, Kokkos::HostSpace> readnames, sequences, quals;
+  View1D<int, Kokkos::HostSpace> sequences_end;
+  View2D<char, Kokkos::LayoutRight> d_sequences;
+  View1D<int> d_sequences_end;
 };
 
 KOKKOS_INLINE_FUNCTION int FastqReader::GetReadsize() const{ 
@@ -40,20 +42,20 @@ KOKKOS_INLINE_FUNCTION int FastqReader::GetReadsize() const{
 
 KOKKOS_INLINE_FUNCTION int FastqReader::GetSequenceLength(const int& id) const{ 
   if(id >= readsize) return 0;
-  else return sequences_end(id); 
+  else return d_sequences_end(id); 
 }
 
 KOKKOS_INLINE_FUNCTION View1D<int> FastqReader::GetSequenceLengths() const{ 
-  return sequences_end; 
+  return d_sequences_end; 
 }
 
 KOKKOS_INLINE_FUNCTION View1D<char> FastqReader::GetSequence(const int& id) const {
   if(id >= readsize) return View1D<char>();
-  else return Kokkos::subview(sequences, id, Kokkos::ALL);
+  else return Kokkos::subview(d_sequences, id, Kokkos::ALL);
 }
 
 KOKKOS_INLINE_FUNCTION View2D<char> FastqReader::GetSequences() const {
-  return sequences;
+  return d_sequences;
 }
 
 

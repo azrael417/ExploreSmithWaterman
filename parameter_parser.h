@@ -14,6 +14,7 @@ struct Parameters {
   // operation parameters
   int batchsize;
   int num_batches;
+  int num_tasks;
   float match;
   float mismatch;
   float open_gap;
@@ -28,6 +29,7 @@ struct Parameters {
       , fastq()
       , batchsize(1)
       , num_batches(-1)
+      , num_tasks(1)
       , match(10.0)
       , mismatch(-9.0)
       , open_gap(15.0)

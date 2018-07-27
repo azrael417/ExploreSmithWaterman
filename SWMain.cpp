@@ -68,12 +68,13 @@ int main(int argc, char* argv[]) {
   cout << "Max reference length: " << max_reference_length << "\n";
   
   //handle negative num batches
-  if(param.num_batches < 0) param.num_batches = sequence_count;
+  if(param.num_batches <= 0) param.num_batches = sequence_count;
+  if(param.num_tasks <= 0) param.num_tasks = 1;
   
   //scope ensures proper deletion of sw object
   {
     CSmithWatermanGotoh sw(param.match, 0-param.mismatch, param.open_gap, param.extend_gap, 
-			   max_reference_length, max_sequence_length);
+			   max_reference_length, max_sequence_length, static_cast<unsigned int>(param.num_tasks));
 
     //allocate alignment buffer
     View2D<Alignment> alignments = View2D<Alignment>("alignments", refs_count, param.batchsize);
@@ -90,13 +91,26 @@ int main(int argc, char* argv[]) {
       auto sequences = fastq.GetSequences();
       auto sequences_length = fastq.GetSequenceLengths();
       
-      Kokkos::parallel_for(t_policy({0,0}, {param.batchsize, refs_count}, {param.batchsize, refs_count}),
-      //Kokkos::parallel_for(t_policy({0,0}, {param.batchsize, refs_count}, {1, 1}),
-			   KOKKOS_LAMBDA(const int &j, const int &i){
-			     int tmplen;
-			     auto tmpread = refs.GetReferenceSequence(i, &tmplen);
-			     sw.Align(alignments(i, j), tmpread, tmplen, Kokkos::subview(sequences, j, Kokkos::ALL), sequences_length(j));
-			   });
+      //define partition launch kernel
+      auto master = [&]( int partition_id, int num_partitions ) {
+        
+        //perform tasking over batch dim:
+        int jblock = param.batchsize / num_partitions;
+        int jb = jblock * partition_id;
+        int je = std::min(jb+jblock, param.batchsize);
+
+        //do the loop
+        for (int j=jb; j < je; ++j){
+          for (int i=0; i < refs_count; ++i){
+            int tmplen;
+            auto tmpread = refs.GetReferenceSequence(i, &tmplen);
+            sw.Align(partition_id, alignments(i, j), tmpread, tmplen, Kokkos::subview(sequences, j, Kokkos::ALL), sequences_length(j));
+          }
+        }
+      };
+      
+      //dispatch
+      Kokkos::OpenMP::partition_master( master, param.num_tasks );
       
       //print alignment
       for (int j = 0; j < param.batchsize; ++j){
@@ -118,7 +132,7 @@ int main(int argc, char* argv[]) {
       for (int j = 0; j < remaindercount; ++j){
         for (int i = 0; i < refs_count; ++i) {
           auto tmpread = refs.GetReferenceSequence(i, &length);
-          sw.Align(alignments(i, j), tmpread, length, fastq.GetSequence(j), fastq.GetSequenceLength(j));
+          sw.Align(0, alignments(i, j), tmpread, length, fastq.GetSequence(j), fastq.GetSequenceLength(j));
         }
       }
       //print alignment
@@ -141,6 +155,7 @@ int main(int argc, char* argv[]) {
   float cpu_time = (static_cast<float>(end - start)) / static_cast<float>(CLOCKS_PER_SEC);
   fprintf(stdout, "CPU time: %f seconds\n", cpu_time);
   fprintf(stdout, "Number of total alignments: %i\n", num_total_aligns);
+  fprintf(stdout, "Alignments per second: %f\n", (float)num_total_aligns / cpu_time);
 
 	//=====================================================
 	// defind the hash region

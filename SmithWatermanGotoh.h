@@ -39,12 +39,12 @@ struct Alignment {
 class CSmithWatermanGotoh {
 public:
 	// constructor
-        CSmithWatermanGotoh(float matchScore, float mismatchScore, float gapOpenPenalty, float gapExtendPenalty, 
-		            unsigned int max_reference_length, unsigned int max_sequence_length);
+  CSmithWatermanGotoh(float matchScore, float mismatchScore, float gapOpenPenalty, float gapExtendPenalty, 
+		            unsigned int max_reference_length, unsigned int max_sequence_length, unsigned int num_tasks);
 	// destructor
 	~CSmithWatermanGotoh(void);
 	// aligns the query sequence to the reference using the Smith Waterman Gotoh algorithm
-	KOKKOS_INLINE_FUNCTION void Align(Alignment& alignment, View1D<char> s1, const unsigned int& s1Length, View1D<char> s2, const unsigned int& s2Length) const;
+	KOKKOS_INLINE_FUNCTION void Align(const unsigned int teamid, Alignment& alignment, View1D<char> s1, const unsigned int& s1Length, View1D<char> s2, const unsigned int& s2Length) const;
 	// enables homo-polymer scoring
 	void EnableHomoPolymerGapPenalty(float hpGapOpenPenalty);
 private:
@@ -52,9 +52,9 @@ private:
 	void CreateScoringMatrix(void);
   //allocate temp buffers
   void InitArrays();
-  void InitArrays(unsigned int max_reference_length, unsigned int max_sequence_length);
+  void InitArrays(unsigned int max_reference_length, unsigned int max_sequence_length, unsigned int num_tasks=0);
 	// corrects the homopolymer gap order for forward alignments
-	KOKKOS_INLINE_FUNCTION void CorrectHomopolymerGapOrder(const unsigned int numBases, const unsigned int numMismatches) const;
+	KOKKOS_INLINE_FUNCTION void CorrectHomopolymerGapOrder(const unsigned int teamid, const unsigned int numBases, const unsigned int numMismatches) const;
 	// returns the maximum floating point number
 	static inline float MaxFloats(const float& a, const float& b, const float& c);
 	// our simple scoring matrix
@@ -64,6 +64,7 @@ private:
 	uint64_t mCurrentAnchorSize;
 	uint64_t mCurrentQuerySize;
 	uint64_t mCurrentAQSumSize;
+  uint64_t mNumTasks;
 	// define our traceback directions
 	// N.B. This used to be defined as an enum, but gcc doesn't like being told
 	// which storage class to use
@@ -77,18 +78,18 @@ private:
 	const float mGapOpenPenalty;
 	const float mGapExtendPenalty;
 	// store the backtrace pointers
-	View1D<char> mPointers;
+	View2D<char, Kokkos::LayoutRight> mPointers;
 	// store the vertical gap sizes - assuming gaps are not longer than 32768 bases long
-	View1D<short> mSizesOfVerticalGaps;
+	View2D<short, Kokkos::LayoutRight> mSizesOfVerticalGaps;
 	// store the horizontal gap sizes - assuming gaps are not longer than 32768 bases long
-	View1D<short> mSizesOfHorizontalGaps;	
+	View2D<short, Kokkos::LayoutRight> mSizesOfHorizontalGaps;	
 	// score if xi aligns to a gap after yi
-	View1D<float> mQueryGapScores;
+	View2D<float, Kokkos::LayoutRight> mQueryGapScores;
 	// best score of alignment x1...xi to y1...yi
-	View1D<float> mBestScores;
+	View2D<float, Kokkos::LayoutRight> mBestScores;
 	// our reversed alignment
-	View1D<char> mReversedAnchor;
-	View1D<char> mReversedQuery;
+	View2D<char, Kokkos::LayoutRight> mReversedAnchor;
+	View2D<char, Kokkos::LayoutRight> mReversedQuery;
 	// define static constants
 	//static const float FLOAT_NEGATIVE_INFINITY;
 	// toggles the use of the homo-polymer gap open penalty
@@ -108,7 +109,7 @@ inline float CSmithWatermanGotoh::MaxFloats(const float& a, const float& b, cons
 
 
 // aligns the query sequence to the reference using the Smith Waterman Gotoh algorithm
-KOKKOS_INLINE_FUNCTION void CSmithWatermanGotoh::Align(Alignment& alignment, View1D<char> s1, const unsigned int& s1Length, View1D<char> s2, const unsigned int& s2Length) const {
+KOKKOS_INLINE_FUNCTION void CSmithWatermanGotoh::Align(const unsigned int teamid, Alignment& alignment, View1D<char> s1, const unsigned int& s1Length, View1D<char> s2, const unsigned int& s2Length) const {
 
 	if((s1Length == 0) || (s2Length == 0)) {
 		cout << "ERROR: Found a read with a zero length." << endl;
@@ -123,18 +124,18 @@ KOKKOS_INLINE_FUNCTION void CSmithWatermanGotoh::Align(Alignment& alignment, Vie
 	//mCurrentMatrixSize = matrix_size;
 
 	// initialize the traceback matrix to STOP
-  for(uint64_t i = 0; i < queryLen; ++i) mPointers(i) = 0;
+  for(uint64_t i = 0; i < queryLen; ++i) mPointers(teamid, i) = 0;
 	//memset((char*)mPointers, 0, SIZEOF_CHAR * queryLen);
 	for(uint64_t i = 1; i < referenceLen; ++i) {
-	  mPointers(i * queryLen) = 0;
+	  mPointers(teamid, i * queryLen) = 0;
 	}
 
 	// initialize the gap matrices to 1
 	//uninitialized_fill(mSizesOfVerticalGaps, mSizesOfVerticalGaps + mCurrentMatrixSize, 1);
 	//uninitialized_fill(mSizesOfHorizontalGaps, mSizesOfHorizontalGaps + mCurrentMatrixSize, 1);
   for(uint64_t i=0; i < matrix_size; ++i){
-    mSizesOfVerticalGaps(i) = 1;
-    mSizesOfHorizontalGaps(i) = 1;
+    mSizesOfVerticalGaps(teamid, i) = 1;
+    mSizesOfHorizontalGaps(teamid, i) = 1;
   }
 
 	//
@@ -147,8 +148,8 @@ KOKKOS_INLINE_FUNCTION void CSmithWatermanGotoh::Align(Alignment& alignment, Vie
   //uninitialized_fill(mQueryGapScores, mQueryGapScores + queryLen, FLOAT_NEGATIVE_INFINITY);
   //memset((char*)mBestScores, 0, SIZEOF_FLOAT * queryLen);
   for(uint64_t i=0; i < queryLen; ++i){
-    mQueryGapScores(i) = FLOAT_NEGATIVE_INFINITY;
-    mBestScores(i) = 0.;
+    mQueryGapScores(teamid, i) = FLOAT_NEGATIVE_INFINITY;
+    mBestScores(teamid, i) = 0.;
   }
 
 	float similarityScore, totalSimilarityScore, bestScoreDiagonal;
@@ -162,7 +163,7 @@ KOKKOS_INLINE_FUNCTION void CSmithWatermanGotoh::Align(Alignment& alignment, Vie
 	for(uint64_t i = 1, k = queryLen; i < referenceLen; i++, k += queryLen) {
 
 		currentAnchorGapScore = FLOAT_NEGATIVE_INFINITY;
-		bestScoreDiagonal = mBestScores(0);
+		bestScoreDiagonal = mBestScores(teamid, 0);
 
 		for(uint64_t j = 1, l = k + 1; j < queryLen; j++, l++) {
 
@@ -174,48 +175,48 @@ KOKKOS_INLINE_FUNCTION void CSmithWatermanGotoh::Align(Alignment& alignment, Vie
 
 			//cout << "i: " << i << ", j: " << j << ", totalSimilarityScore: " << totalSimilarityScore << endl;
 
-			queryGapExtendScore = mQueryGapScores(j) - mGapExtendPenalty;
-			queryGapOpenScore   = mBestScores(j) - mGapOpenPenalty;
+			queryGapExtendScore = mQueryGapScores(teamid, j) - mGapExtendPenalty;
+			queryGapOpenScore   = mBestScores(teamid, j) - mGapOpenPenalty;
 
 			// compute the homo-polymer gap score if enabled
 			if(mUseHomoPolymerGapOpenPenalty)
 				if((j > 1) && (s2(j - 1) == s2(j - 2)))
-					queryGapOpenScore = mBestScores(j) - mHomoPolymerGapOpenPenalty;
+					queryGapOpenScore = mBestScores(teamid, j) - mHomoPolymerGapOpenPenalty;
 
 			if(queryGapExtendScore > queryGapOpenScore) {
-				mQueryGapScores(j) = queryGapExtendScore;
-				mSizesOfVerticalGaps(l) = (short)(mSizesOfVerticalGaps(l - queryLen) + 1);
-			} else mQueryGapScores(j) = queryGapOpenScore;
+				mQueryGapScores(teamid, j) = queryGapExtendScore;
+				mSizesOfVerticalGaps(teamid, l) = (short)(mSizesOfVerticalGaps(teamid, l - queryLen) + 1);
+			} else mQueryGapScores(teamid, j) = queryGapOpenScore;
 
 			referenceGapExtendScore = currentAnchorGapScore - mGapExtendPenalty;
-			referenceGapOpenScore   = mBestScores(j - 1) - mGapOpenPenalty;
+			referenceGapOpenScore   = mBestScores(teamid, j - 1) - mGapOpenPenalty;
 
 			// compute the homo-polymer gap score if enabled
 			if(mUseHomoPolymerGapOpenPenalty)
 				if((i > 1) && (s1(i - 1) == s1(i - 2)))
-					referenceGapOpenScore = mBestScores(j - 1) - mHomoPolymerGapOpenPenalty;
+					referenceGapOpenScore = mBestScores(teamid, j - 1) - mHomoPolymerGapOpenPenalty;
 
 			if(referenceGapExtendScore > referenceGapOpenScore) {
 				currentAnchorGapScore = referenceGapExtendScore;
-				mSizesOfHorizontalGaps(l) = (short)(mSizesOfHorizontalGaps(l - 1) + 1);
+				mSizesOfHorizontalGaps(teamid, l) = (short)(mSizesOfHorizontalGaps(teamid, l - 1) + 1);
 			} else currentAnchorGapScore = referenceGapOpenScore;
 
-			bestScoreDiagonal = mBestScores(j);
-			mBestScores(j) = MaxFloats(totalSimilarityScore, mQueryGapScores(j), currentAnchorGapScore);
+			bestScoreDiagonal = mBestScores(teamid, j);
+			mBestScores(teamid, j) = MaxFloats(totalSimilarityScore, mQueryGapScores(teamid, j), currentAnchorGapScore);
 			
 
 			// determine the traceback direction
 			// diagonal (445364713) > stop (238960195) > up (214378647) > left (166504495)
-			if(mBestScores(j) == 0)                         mPointers(l) = DIRECTIONS_STOP;
-			else if(mBestScores(j) == totalSimilarityScore) mPointers(l) = DIRECTIONS_DIAGONAL;
-			else if(mBestScores(j) == mQueryGapScores(j))   mPointers(l) = DIRECTIONS_UP;
-			else                                            mPointers(l) = DIRECTIONS_LEFT;
+			if(mBestScores(teamid, j) == 0)                         mPointers(teamid, l) = DIRECTIONS_STOP;
+			else if(mBestScores(teamid, j) == totalSimilarityScore) mPointers(teamid, l) = DIRECTIONS_DIAGONAL;
+			else if(mBestScores(teamid, j) == mQueryGapScores(teamid, j))   mPointers(teamid, l) = DIRECTIONS_UP;
+			else                                            mPointers(teamid, l) = DIRECTIONS_LEFT;
 
 			// set the traceback start at the current cell i, j and score
-			if(mBestScores(j) > BestScore) {
+			if(mBestScores(teamid, j) > BestScore) {
 				BestRow    = i;
 				BestColumn = j;
-				BestScore  = mBestScores(j);
+				BestScore  = mBestScores(teamid, j);
 			}
 		}
 	}
@@ -243,15 +244,15 @@ KOKKOS_INLINE_FUNCTION void CSmithWatermanGotoh::Align(Alignment& alignment, Vie
 	while(keepProcessing) {
 
 		// diagonal (445364713) > stop (238960195) > up (214378647) > left (166504495)
-		switch(mPointers[ck + cj]) {
+		switch(mPointers(teamid, ck + cj)) {
 
 			case DIRECTIONS_DIAGONAL:
 				c1 = s1(--ci);
 				c2 = s2(--cj);
 				ck -= queryLen;
 
-				mReversedAnchor(gappedAnchorLen++) = c1;
-				mReversedQuery(gappedQueryLen++)   = c2;
+				mReversedAnchor(teamid, gappedAnchorLen++) = c1;
+				mReversedQuery(teamid, gappedQueryLen++)   = c2;
 
 				// increment our mismatch counter
 				if(mScoringMatrix(c1 - 'A', c2 - 'A') == mMismatchScore) numMismatches++;	
@@ -262,18 +263,18 @@ KOKKOS_INLINE_FUNCTION void CSmithWatermanGotoh::Align(Alignment& alignment, Vie
 				break;
 
 			case DIRECTIONS_UP:
-				for(uint64_t l = 0, len = mSizesOfVerticalGaps(ck + cj); l < len; l++) {
-					mReversedAnchor(gappedAnchorLen++) = s1(--ci);
-					mReversedQuery(gappedQueryLen++)   = GAP;
+				for(uint64_t l = 0, len = mSizesOfVerticalGaps(teamid, ck + cj); l < len; l++) {
+					mReversedAnchor(teamid, gappedAnchorLen++) = s1(--ci);
+					mReversedQuery(teamid, gappedQueryLen++)   = GAP;
 					ck -= queryLen;
 					numMismatches++;
 				}
 				break;
 
 			case DIRECTIONS_LEFT:
-				for(uint64_t l = 0, len = mSizesOfHorizontalGaps(ck + cj); l < len; l++) {
-					mReversedAnchor(gappedAnchorLen++) = GAP;
-					mReversedQuery(gappedQueryLen++)   = s2(--cj);
+				for(uint64_t l = 0, len = mSizesOfHorizontalGaps(teamid, ck + cj); l < len; l++) {
+					mReversedAnchor(teamid, gappedAnchorLen++) = GAP;
+					mReversedQuery(teamid, gappedQueryLen++)   = s2(--cj);
 					numMismatches++;
 				}
 				break;
@@ -281,8 +282,8 @@ KOKKOS_INLINE_FUNCTION void CSmithWatermanGotoh::Align(Alignment& alignment, Vie
 	}
 
 	// define the reference and query sequences
-	mReversedAnchor(gappedAnchorLen) = 0;
-	mReversedQuery(gappedQueryLen)   = 0;
+	mReversedAnchor(teamid, gappedAnchorLen) = 0;
+	mReversedQuery(teamid, gappedQueryLen)   = 0;
 
 	// catch sequences with different lengths
 	if(gappedAnchorLen != gappedQueryLen) {
@@ -294,14 +295,14 @@ KOKKOS_INLINE_FUNCTION void CSmithWatermanGotoh::Align(Alignment& alignment, Vie
   //reverse(mReversedAnchor, mReversedAnchor + gappedAnchorLen);
 	//reverse(mReversedQuery,  mReversedQuery  + gappedQueryLen);
   for(uint64_t r=0; r < int(gappedAnchorLen/2); ++r){
-    char last = mReversedAnchor(gappedAnchorLen - r - 1);
-    mReversedAnchor(gappedAnchorLen - r - 1) = mReversedAnchor(r);
-    mReversedAnchor(r) = last;
+    char last = mReversedAnchor(teamid, gappedAnchorLen - r - 1);
+    mReversedAnchor(teamid, gappedAnchorLen - r - 1) = mReversedAnchor(teamid, r);
+    mReversedAnchor(teamid, r) = last;
   }
   for(uint64_t r=0; r < int(gappedQueryLen/2); ++r){
-    char last = mReversedQuery(gappedQueryLen - r - 1);
-    mReversedQuery(gappedQueryLen - r - 1) = mReversedQuery(r);
-    mReversedQuery(r) = last;
+    char last = mReversedQuery(teamid, gappedQueryLen - r - 1);
+    mReversedQuery(teamid, gappedQueryLen - r - 1) = mReversedQuery(teamid, r);
+    mReversedQuery(teamid, r) = last;
   }
 
 /*
@@ -339,14 +340,14 @@ KOKKOS_INLINE_FUNCTION void CSmithWatermanGotoh::Align(Alignment& alignment, Vie
 	//alignment.NumMismatches  = numMismatches;
   
   string tststring;
-  ViewToString(tststring, mReversedAnchor);
+  ViewToString(tststring, Kokkos::subview(mReversedAnchor, teamid, Kokkos::ALL));
 	uint64_t alLength = strlen(tststring.c_str());
 	uint64_t m = 0, d = 0, i = 0;
 	bool dashRegion = false;
 	//ostringstream oCigar (ostringstream::out);
 	for ( unsigned int j = 0; j < alLength; j++ ) {
 		// m
-		if ( ( mReversedAnchor(j) != GAP ) && ( mReversedQuery(j) != GAP ) ) {
+		if ( ( mReversedAnchor(teamid, j) != GAP ) && ( mReversedQuery(teamid, j) != GAP ) ) {
 			if ( dashRegion ) {
 				if ( d != 0 ){
           alignment.cigarCount = d;
@@ -371,7 +372,7 @@ KOKKOS_INLINE_FUNCTION void CSmithWatermanGotoh::Align(Alignment& alignment, Vie
       }
 			dashRegion = true;
 			m = 0;
-			if ( mReversedAnchor(j) == GAP ) {
+			if ( mReversedAnchor(teamid, j) == GAP ) {
 				if ( d != 0 ){
           alignment.cigarCount = d;
           alignment.cigarChar = 'D';
@@ -408,12 +409,12 @@ KOKKOS_INLINE_FUNCTION void CSmithWatermanGotoh::Align(Alignment& alignment, Vie
   }
 	
 	// fix the gap order
-	CorrectHomopolymerGapOrder(alLength, numMismatches);
+	CorrectHomopolymerGapOrder(teamid, alLength, numMismatches);
 }
 
 
 // corrects the homopolymer gap order for forward alignments
-KOKKOS_INLINE_FUNCTION void CSmithWatermanGotoh::CorrectHomopolymerGapOrder(const unsigned int numBases, const unsigned int numMismatches) const{
+KOKKOS_INLINE_FUNCTION void CSmithWatermanGotoh::CorrectHomopolymerGapOrder(const unsigned int teamid, const unsigned int numBases, const unsigned int numMismatches) const{
 
 	// this is only required for alignments with mismatches
 	//if(al.NumMismatches == 0) return;
@@ -423,13 +424,13 @@ KOKKOS_INLINE_FUNCTION void CSmithWatermanGotoh::CorrectHomopolymerGapOrder(cons
 	//char* pReference = al.Reference.Data();
 	//char* pQuery     = al.Query.Data();
 	//const unsigned int numBases = al.Reference.Length();
-	View1D<char>* pReference = const_cast<View1D<char>*>(&mReversedAnchor);
-	View1D<char>* pQuery     = const_cast<View1D<char>*>(&mReversedQuery);
+	View2D<char, Kokkos::LayoutRight>* pReference = const_cast<View2D<char, Kokkos::LayoutRight>*>(&mReversedAnchor);
+	View2D<char, Kokkos::LayoutRight>* pQuery     = const_cast<View2D<char, Kokkos::LayoutRight>*>(&mReversedQuery);
 
 	// initialize
 	bool hasReferenceGap = false, hasQueryGap = false;
-	View1D<char>* pNonGapSeq = NULL;
-	View1D<char>* pGapSeq    = NULL;
+	View2D<char, Kokkos::LayoutRight>* pNonGapSeq = NULL;
+	View2D<char, Kokkos::LayoutRight>* pGapSeq    = NULL;
 	char nonGapBase  = 'J';
 
 	// identify gapped regions
@@ -439,18 +440,18 @@ KOKKOS_INLINE_FUNCTION void CSmithWatermanGotoh::CorrectHomopolymerGapOrder(cons
 		hasReferenceGap = false;
 		hasQueryGap     = false;
 
-		if((*pReference)(i) == GAP) {
+		if((*pReference)(teamid, i) == GAP) {
 			hasReferenceGap = true;
 			pNonGapSeq      = pQuery;
 			pGapSeq         = pReference;
-			nonGapBase      = (*pQuery)(i);
+			nonGapBase      = (*pQuery)(teamid, i);
 		}
 
-		if((*pQuery)(i) == GAP) {
+		if((*pQuery)(teamid, i) == GAP) {
 			hasQueryGap = true;
 			pNonGapSeq  = pReference;
 			pGapSeq     = pQuery;
-			nonGapBase  = (*pReference)(i);
+			nonGapBase  = (*pReference)(teamid, i);
 		}
 
 		// continue if we don't have any gaps
@@ -468,8 +469,8 @@ KOKKOS_INLINE_FUNCTION void CSmithWatermanGotoh::CorrectHomopolymerGapOrder(cons
 		unsigned short testPos = i;
 		while(testPos < numBases) {
 
-			const char gs  = (*pGapSeq)(testPos);
-			const char ngs = (*pNonGapSeq)(testPos);
+			const char gs  = (*pGapSeq)(teamid, testPos);
+			const char ngs = (*pNonGapSeq)(teamid, testPos);
 
 			bool isPartofHomopolymer = false;
 			if(((gs == nonGapBase) || (gs == GAP)) && (ngs == nonGapBase)) isPartofHomopolymer = true;
@@ -483,8 +484,8 @@ KOKKOS_INLINE_FUNCTION void CSmithWatermanGotoh::CorrectHomopolymerGapOrder(cons
 		// fix the gap order
 		if(numGappedBases != 0) {
 			
-      for(unsigned int kk=0; kk<nonGapLength; kk++) (*pGapSeq)(i + kk) = nonGapBase;
-      for(unsigned int kk=0; kk<numGappedBases; kk++) (*pGapSeq)(i + nonGapLength + kk) = GAP;
+      for(unsigned int kk=0; kk<nonGapLength; kk++) (*pGapSeq)(teamid, i + kk) = nonGapBase;
+      for(unsigned int kk=0; kk<numGappedBases; kk++) (*pGapSeq)(teamid, i + nonGapLength + kk) = GAP;
       
       //char* pCurrentSequence = pGapSeq + i;
 			//memset(pCurrentSequence, nonGapBase, nonGapLength);

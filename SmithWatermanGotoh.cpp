@@ -10,11 +10,12 @@
 //const char CSmithWatermanGotoh::Directions_UP       = 3;
 
 CSmithWatermanGotoh::CSmithWatermanGotoh(float matchScore, float mismatchScore, float gapOpenPenalty, float gapExtendPenalty,
-					 unsigned int max_reference_length, unsigned int max_sequence_length) 
+					 unsigned int max_reference_length, unsigned int max_sequence_length, unsigned int num_tasks) 
 : mCurrentMatrixSize((max_reference_length + 1) * (max_sequence_length + 1))
 , mCurrentAnchorSize(0)
 , mCurrentQuerySize(max_sequence_length + 1)
 , mCurrentAQSumSize(max_sequence_length + max_reference_length)
+, mNumTasks(num_tasks)
 , mMatchScore(matchScore)
 , mMismatchScore(mismatchScore)
 , mGapOpenPenalty(gapOpenPenalty)
@@ -36,21 +37,24 @@ CSmithWatermanGotoh::CSmithWatermanGotoh(float matchScore, float mismatchScore, 
 void CSmithWatermanGotoh::InitArrays(){
   
   //create views
-  mPointers              = View1D<char>("mPointers", mCurrentMatrixSize);
-  mSizesOfVerticalGaps   = View1D<short>("mSizesOfVerticalGaps", mCurrentMatrixSize);
-  mSizesOfHorizontalGaps = View1D<short>("mSizesOfHorizontalGaps", mCurrentMatrixSize);
-  mQueryGapScores        = View1D<float>("mQueryGapScores", mCurrentQuerySize + 1);
-  mBestScores            = View1D<float>("mBestScores", mCurrentQuerySize + 1);
-  mReversedAnchor        = View1D<char>("mReversedAnchor", mCurrentAQSumSize + 1);	// reversed sequence #1
-  mReversedQuery         = View1D<char>("mReversedQuery", mCurrentAQSumSize + 1);	// reversed sequence #2
+  mPointers              = View2D<char, Kokkos::LayoutRight>("mPointers", mNumTasks, mCurrentMatrixSize);
+  mSizesOfVerticalGaps   = View2D<short, Kokkos::LayoutRight>("mSizesOfVerticalGaps", mNumTasks, mCurrentMatrixSize);
+  mSizesOfHorizontalGaps = View2D<short, Kokkos::LayoutRight>("mSizesOfHorizontalGaps", mNumTasks, mCurrentMatrixSize);
+  mQueryGapScores        = View2D<float, Kokkos::LayoutRight>("mQueryGapScores", mNumTasks, mCurrentQuerySize + 1);
+  mBestScores            = View2D<float, Kokkos::LayoutRight>("mBestScores", mNumTasks, mCurrentQuerySize + 1);
+  mReversedAnchor        = View2D<char, Kokkos::LayoutRight>("mReversedAnchor", mNumTasks, mCurrentAQSumSize + 1);	// reversed sequence #1
+  mReversedQuery         = View2D<char, Kokkos::LayoutRight>("mReversedQuery", mNumTasks, mCurrentAQSumSize + 1);	// reversed sequence #2
   
 }
 
 
-void CSmithWatermanGotoh::InitArrays(unsigned int max_reference_length, unsigned int max_sequence_length){
+void CSmithWatermanGotoh::InitArrays(unsigned int max_reference_length, unsigned int max_sequence_length, unsigned int num_tasks){
   mCurrentMatrixSize = (max_reference_length + 1) * (max_sequence_length + 1);
   mCurrentQuerySize = max_sequence_length + 1;
   mCurrentAQSumSize = max_sequence_length + max_reference_length;
+  
+  if(num_tasks>0) mNumTasks=num_tasks;
+  
   InitArrays();
 }
 

@@ -22,8 +22,11 @@ class References {
 
  private:
   int max_sequence_length_, max_name_length_;
-  View2D<char, Kokkos::LayoutRight> names_, sequences_;
-  View1D<int> sequences_end_;
+  View2D<char, Kokkos::LayoutRight, Kokkos::HostSpace> names_, sequences_;
+  View2D<char, Kokkos::LayoutRight> d_sequences_; 
+  View1D<int, Kokkos::HostSpace> sequences_end_;
+  View1D<int> d_sequences_end_;
+  
 };
 
 KOKKOS_INLINE_FUNCTION int References::GetMaxSequenceLength() const {
@@ -40,7 +43,7 @@ KOKKOS_INLINE_FUNCTION View1D<char> References::GetReferenceSequence(const int& 
     std::cerr << "ERROR: The requested id(" << id << ") is invalid."<< std::endl;
     return View1D<char>();
   } else {
-    return Kokkos::subview(sequences_, id, Kokkos::ALL);
+    return Kokkos::subview(d_sequences_, id, Kokkos::ALL);
   }
 }
 

@@ -39,7 +39,7 @@ void ParseArgumentsOrDie(const int argc,
     param->command_line += argv[i];
   }
 
-  const char *short_option = "hf:q:b:n:m:x:o:e:";
+  const char *short_option = "hf:q:b:n:t:m:x:o:e:";
 
   const struct option long_option[] = {
     {"help", no_argument, NULL, 'h'},
@@ -47,6 +47,7 @@ void ParseArgumentsOrDie(const int argc,
     {"fastq", required_argument, NULL, 'q'},
     {"batchsize", required_argument, NULL, 'b'},
     {"num-batches", required_argument, NULL, 'n'},
+    {"num-tasks", required_argument, NULL, 't'},
 
     {"match", required_argument, NULL, 'm'},
     {"mismatch", required_argument, NULL, 'x'},
@@ -88,6 +89,13 @@ void ParseArgumentsOrDie(const int argc,
               << "         Set it to default -1" << endl;
         }
         break;
+        
+      case 't':
+          if(!convert_from_string(optarg, param->num_tasks)) {
+            cerr << "WARNING: Cannot parse -t --num-tasks." << endl
+                << "         Set it to default 1" << endl;
+          }
+          break;
 
       case 'm':
         if(!convert_from_string(optarg, param->match)) {
@@ -174,6 +182,7 @@ void PrintHelp(const string& program) {
 		<< endl
     << "   -b --batchsize <int>  Batch size for reads from fastq file [1]." << endl
     << "   -n --num-batches <int>  Number of total batches read from fastq file [-1]." << endl
+    << "   -t --num-tasks <int>  Number of parallel tasks (independent aligns) [1]." << endl
 		<< "   -m --match <float>    Match score [10]." << endl
 		<< "   -x --mismatch <float> Mismatch score [9]." << endl
 		<< "   -o --open-gap <float> Gap open penalty [15]." << endl
