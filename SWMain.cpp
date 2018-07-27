@@ -71,6 +71,8 @@ int main(int argc, char* argv[]) {
   if(param.num_batches <= 0) param.num_batches = sequence_count;
   if(param.num_tasks <= 0) param.num_tasks = 1;
   
+  cout << "Num concurrent tasks: " << param.num_tasks << endl;
+
   //scope ensures proper deletion of sw object
   {
     CSmithWatermanGotoh sw(param.match, 0-param.mismatch, param.open_gap, param.extend_gap, 

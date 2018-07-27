@@ -36,14 +36,25 @@ CSmithWatermanGotoh::CSmithWatermanGotoh(float matchScore, float mismatchScore, 
 
 void CSmithWatermanGotoh::InitArrays(){
   
+  uint64_t numBytes = 0;
+  
   //create views
   mPointers              = View2D<char, Kokkos::LayoutRight>("mPointers", mNumTasks, mCurrentMatrixSize);
+  numBytes += mPointers.span() * sizeof(char);
   mSizesOfVerticalGaps   = View2D<short, Kokkos::LayoutRight>("mSizesOfVerticalGaps", mNumTasks, mCurrentMatrixSize);
+  numBytes += mSizesOfVerticalGaps.span() * sizeof(short);
   mSizesOfHorizontalGaps = View2D<short, Kokkos::LayoutRight>("mSizesOfHorizontalGaps", mNumTasks, mCurrentMatrixSize);
+  numBytes += mSizesOfHorizontalGaps.span() * sizeof(short);
   mQueryGapScores        = View2D<float, Kokkos::LayoutRight>("mQueryGapScores", mNumTasks, mCurrentQuerySize + 1);
+  numBytes += mQueryGapScores.span() * sizeof(float);
   mBestScores            = View2D<float, Kokkos::LayoutRight>("mBestScores", mNumTasks, mCurrentQuerySize + 1);
-  mReversedAnchor        = View2D<char, Kokkos::LayoutRight>("mReversedAnchor", mNumTasks, mCurrentAQSumSize + 1);	// reversed sequence #1
-  mReversedQuery         = View2D<char, Kokkos::LayoutRight>("mReversedQuery", mNumTasks, mCurrentAQSumSize + 1);	// reversed sequence #2
+  numBytes += mBestScores.span() * sizeof(float);
+  mReversedAnchor        = View2D<char, Kokkos::LayoutRight>("mReversedAnchor", mNumTasks, mCurrentAQSumSize + 1);    // reversed sequence #1
+  numBytes += mReversedAnchor.span() * sizeof(char);
+  mReversedQuery         = View2D<char, Kokkos::LayoutRight>("mReversedQuery", mNumTasks, mCurrentAQSumSize + 1);    // reversed sequence #2
+  numBytes += mReversedQuery.span() * sizeof(char);
+  
+  std::cout << "Allocated Work Space Data [MB]: " << numBytes / 1024. /1024. << std::endl;
   
 }
 

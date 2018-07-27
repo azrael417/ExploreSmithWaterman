@@ -56,7 +56,7 @@ private:
 	// corrects the homopolymer gap order for forward alignments
 	KOKKOS_INLINE_FUNCTION void CorrectHomopolymerGapOrder(const unsigned int teamid, const unsigned int numBases, const unsigned int numMismatches) const;
 	// returns the maximum floating point number
-	static inline float MaxFloats(const float& a, const float& b, const float& c);
+	KOKKOS_INLINE_FUNCTION float MaxFloats(const float& a, const float& b, const float& c) const;
 	// our simple scoring matrix
 	View2D<float> mScoringMatrix; //size [MOSAIK_NUM_NUCLEOTIDES][MOSAIK_NUM_NUCLEOTIDES];
 	// keep track of maximum initialized sizes
@@ -99,7 +99,7 @@ private:
 };
 
 // returns the maximum floating point number
-inline float CSmithWatermanGotoh::MaxFloats(const float& a, const float& b, const float& c) {
+KOKKOS_INLINE_FUNCTION float CSmithWatermanGotoh::MaxFloats(const float& a, const float& b, const float& c) const {
 	float max = 0.0f;
 	if(a > max) max = a;
 	if(b > max) max = b;
@@ -124,11 +124,11 @@ KOKKOS_INLINE_FUNCTION void CSmithWatermanGotoh::Align(const unsigned int teamid
 	//mCurrentMatrixSize = matrix_size;
 
 	// initialize the traceback matrix to STOP
-  for(uint64_t i = 0; i < queryLen; ++i) mPointers(teamid, i) = 0;
+  //for(uint64_t i = 0; i < queryLen; ++i) mPointers(teamid, i) = 0;
 	//memset((char*)mPointers, 0, SIZEOF_CHAR * queryLen);
-	for(uint64_t i = 1; i < referenceLen; ++i) {
-	  mPointers(teamid, i * queryLen) = 0;
-	}
+	//for(uint64_t i = 1; i < referenceLen; ++i) {
+	//  mPointers(teamid, i * queryLen) = 0;
+	//}
 
 	// initialize the gap matrices to 1
 	//uninitialized_fill(mSizesOfVerticalGaps, mSizesOfVerticalGaps + mCurrentMatrixSize, 1);
@@ -161,6 +161,11 @@ KOKKOS_INLINE_FUNCTION void CSmithWatermanGotoh::Align(const unsigned int teamid
 	float BestScore         = FLOAT_NEGATIVE_INFINITY;
 
 	for(uint64_t i = 1, k = queryLen; i < referenceLen; i++, k += queryLen) {
+
+    //some initializations
+    //mPointers(teamid, i * queryLen) = 0;
+    mPointers(teamid, i) = 0;
+    mPointers(teamid, k) = 0;
 
 		currentAnchorGapScore = FLOAT_NEGATIVE_INFINITY;
 		bestScoreDiagonal = mBestScores(teamid, 0);
@@ -207,10 +212,10 @@ KOKKOS_INLINE_FUNCTION void CSmithWatermanGotoh::Align(const unsigned int teamid
 
 			// determine the traceback direction
 			// diagonal (445364713) > stop (238960195) > up (214378647) > left (166504495)
-			if(mBestScores(teamid, j) == 0)                         mPointers(teamid, l) = DIRECTIONS_STOP;
-			else if(mBestScores(teamid, j) == totalSimilarityScore) mPointers(teamid, l) = DIRECTIONS_DIAGONAL;
+			if(mBestScores(teamid, j) == 0)                                 mPointers(teamid, l) = DIRECTIONS_STOP;
+			else if(mBestScores(teamid, j) == totalSimilarityScore)         mPointers(teamid, l) = DIRECTIONS_DIAGONAL;
 			else if(mBestScores(teamid, j) == mQueryGapScores(teamid, j))   mPointers(teamid, l) = DIRECTIONS_UP;
-			else                                            mPointers(teamid, l) = DIRECTIONS_LEFT;
+			else                                                            mPointers(teamid, l) = DIRECTIONS_LEFT;
 
 			// set the traceback start at the current cell i, j and score
 			if(mBestScores(teamid, j) > BestScore) {
